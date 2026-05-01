@@ -1,16 +1,17 @@
 from datetime import datetime
 from pathlib import Path
 import time
-
+from env.entities import Player, Wall, Door
+from env.entities.game_object import TILE_SIZE
 import pygame
 
-TILE_SIZE = 60
 RESULTS_FILE = Path("game_results.txt")
+
 
 WALL = 1
 EMPTY = 0
-BUTTON = 2
 DOOR = 3
+PLAYER = 9
 
 STEP_PENALTY = -0.01
 DISTANCE_REWARD_SCALE = 0.75
@@ -45,10 +46,6 @@ class PlatformerEnv:
         self.reset()
 
     def reset(self):
-        self.player_x = self.start_x
-        self.player_vx = 0.0
-        self.player_y = self.start_y
-
         self.done = False
         self.steps = 0
         self.input_count = 0
@@ -56,6 +53,27 @@ class PlatformerEnv:
         self.started_at = time.perf_counter()
         self.finished_at = None
         self.previous_distance_to_door = self._distance_to_door()
+
+        self.walls = []
+        self.players = []   # changed from single player → list
+        self.door = None
+
+        for y, row in enumerate(self.level):
+            for x, tile in enumerate(row):
+                if tile == WALL:
+                    self.walls.append(Wall(x, y))
+                elif tile == DOOR:
+                    self.door = Door(x, y)
+                elif tile == PLAYER:
+                    self.players.append(Player(x, y))  # multiple players
+
+        if len(self.players) == 0:
+            raise ValueError("No player spawn (9) found in level")
+
+        if self.door is None:
+            raise ValueError("No door (3) found in level")
+
+        self.done = False
 
         return self._get_state()
 
@@ -67,27 +85,10 @@ class PlatformerEnv:
             self.has_moved = True
             self.input_count += 1
 
-        acceleration = 0.2
-        friction = 0.5
-        max_speed = 0.6
+        # SAME action applied to ALL players
+        for player in self.players:
+            player.update(action, self.walls)
 
-        if action == 0:
-            self.player_vx -= acceleration
-        elif action == 1:
-            self.player_vx += acceleration
-
-        if self.player_vx > max_speed:
-            self.player_vx = max_speed
-        if self.player_vx < -max_speed:
-            self.player_vx = -max_speed
-
-        self.player_vx *= friction
-
-        new_x = self.player_x + self.player_vx
-        new_y = self.player_y
-
-        if self.level[new_y][int(new_x)] != WALL:
-            self.player_x = new_x
 
         current_distance = self._distance_to_door()
         distance_delta = self.previous_distance_to_door - current_distance
@@ -113,16 +114,23 @@ class PlatformerEnv:
             self.finished_at = time.perf_counter()
             self._record_completion(elapsed_seconds, reward)
 
+        # check win condition (any player reaches door)
+        for player in self.players:
+            if player.rect().colliderect(self.door.rect()):
+                reward += 10
+                self.done = True
+                break
+
         if self.render_mode:
             self._render()
 
         return self._get_state(), reward, self.done
 
     def _get_state(self):
-        return [
-            self.player_x,
-            self.player_vx,
-        ]
+        state = []
+        for p in self.players:
+            state.extend([p.x, p.vx])
+        return state
 
     def _find_tile(self, target_tile):
         for y, row in enumerate(self.level):
@@ -167,34 +175,13 @@ class PlatformerEnv:
     def _render(self):
         self.screen.fill((255, 255, 255))
 
-        for y in range(self.height):
-            for x in range(self.width):
-                tile = self.level[y][x]
+        for wall in self.walls:
+            wall.render(self.screen)
 
-                rect = pygame.Rect(
-                    x * TILE_SIZE,
-                    y * TILE_SIZE,
-                    TILE_SIZE,
-                    TILE_SIZE
-                )
+        self.door.render(self.screen)
 
-                if tile == WALL:
-                    pygame.draw.rect(self.screen, (80, 80, 80), rect)
-                elif tile == BUTTON:
-                    pygame.draw.rect(self.screen, (200, 50, 50), rect)
-                elif tile == DOOR:
-                    pygame.draw.rect(self.screen, (0, 255, 0), rect)
-
-        pygame.draw.rect(
-            self.screen,
-            (50, 100, 255),
-            pygame.Rect(
-                int(self.player_x * TILE_SIZE),
-                self.player_y * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE
-            )
-        )
+        for player in self.players:
+            player.render(self.screen)
 
         if not self.has_moved:
             timer = self.font.render(f"{self._elapsed_seconds():.1f}s", True, (20, 20, 20))
