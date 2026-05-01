@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 from env.platformer_env import PlatformerEnv
 from agents.random_agent import RandomAgent
@@ -17,7 +19,7 @@ LEVEL = [
 MODE = "human"
 
 def run(mode):
-    env = PlatformerEnv(LEVEL, render=True)
+    env = PlatformerEnv(LEVEL, render=True, run_label=mode)
     state = env.reset()
     clock = pygame.time.Clock()
 
@@ -50,5 +52,6 @@ def run(mode):
     pygame.quit()
 
 if __name__ == "__main__":
-    run(MODE)
+    selected_mode = sys.argv[1] if len(sys.argv) > 1 else MODE
+    run(selected_mode)
     
