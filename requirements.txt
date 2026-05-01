@@ -1,0 +1,9 @@
+pygame
+
+Install with:
+
+pip install -r requirements.txt
+
+run commands:
+    python main.py human
+    python main.py ai   
