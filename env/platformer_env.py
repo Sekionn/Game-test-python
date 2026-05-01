@@ -28,9 +28,8 @@ class PlatformerEnv:
     def reset(self):
         self.player_x = 1.0
         self.player_vx = 0.0
-        self.player_y = 4
+        self.player_y = 7
 
-        self.button_pressed = False
         self.done = False
 
         return self._get_state()
@@ -67,14 +66,9 @@ class PlatformerEnv:
 
         tile = self.level[self.player_y][int(self.player_x)]
 
-        # button logic
-        if tile == 2:
-            if not self.button_pressed:
-                reward += 1
-            self.button_pressed = True
 
         # door logic
-        if tile == 3 and self.button_pressed:
+        if tile == 3:
             reward += 10
             self.done = True
 
@@ -87,7 +81,6 @@ class PlatformerEnv:
         return [
             self.player_x,
             self.player_vx,
-            self.button_pressed
         ]
 
     def _render(self):
@@ -109,7 +102,7 @@ class PlatformerEnv:
                 elif tile == BUTTON:
                     pygame.draw.rect(self.screen, (200, 50, 50), rect)
                 elif tile == DOOR:
-                    color = (0, 255, 0) if self.button_pressed else (255, 0, 0)
+                    color = (0, 255, 0)
                     pygame.draw.rect(self.screen, color, rect)
 
         # player
