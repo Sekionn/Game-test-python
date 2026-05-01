@@ -27,7 +27,7 @@ class PlatformerEnv:
 
     def reset(self):
         self.walls = []
-        self.players = []   # 🔥 changed from single player → list
+        self.players = []
         self.door = None
 
         for y, row in enumerate(self.level):
@@ -37,7 +37,7 @@ class PlatformerEnv:
                 elif tile == DOOR:
                     self.door = Door(x, y)
                 elif tile == PLAYER:
-                    self.players.append(Player(x, y))  # 🔥 multiple players
+                    self.players.append(Player(x, y))
 
         if len(self.players) == 0:
             raise ValueError("No player spawn (9) found in level")
@@ -51,11 +51,9 @@ class PlatformerEnv:
     def step(self, action):
         reward = -0.01
 
-        # 🔥 SAME action applied to ALL players
         for player in self.players:
             player.update(action, self.walls)
 
-        # check win condition (any player reaches door)
         for player in self.players:
             if player.rect().colliderect(self.door.rect()):
                 reward += 10
