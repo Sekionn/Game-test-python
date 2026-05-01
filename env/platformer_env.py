@@ -26,9 +26,9 @@ class PlatformerEnv:
         self.reset()
 
     def reset(self):
-        self.player_x = 1.0
+        self.player_x = 2.0
         self.player_vx = 0.0
-        self.player_y = 7
+        self.player_y = 8
 
         self.done = False
 
