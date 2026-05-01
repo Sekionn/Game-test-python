@@ -37,9 +37,9 @@ class PlatformerEnv:
     def step(self, action):
         reward = -0.01
 
-        acceleration = 0.2
-        friction = 0.5
-        max_speed = 0.6
+        acceleration = 50
+        friction = 0.01
+        max_speed = 50
 
         # --- INPUT → acceleration ---
         if action == 0:      # left
