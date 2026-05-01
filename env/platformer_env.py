@@ -1,11 +1,11 @@
 import pygame
-
-TILE_SIZE = 60
+from env.entities import Player, Wall, Door
+from env.entities.game_object import TILE_SIZE
 
 WALL = 1
 EMPTY = 0
-BUTTON = 2
 DOOR = 3
+PLAYER = 9
 
 
 class PlatformerEnv:
@@ -26,51 +26,41 @@ class PlatformerEnv:
         self.reset()
 
     def reset(self):
-        self.player_x = 2.0
-        self.player_vx = 0.0
-        self.player_y = 8
+        self.walls = []
+        self.players = []   # 🔥 changed from single player → list
+        self.door = None
+
+        for y, row in enumerate(self.level):
+            for x, tile in enumerate(row):
+                if tile == WALL:
+                    self.walls.append(Wall(x, y))
+                elif tile == DOOR:
+                    self.door = Door(x, y)
+                elif tile == PLAYER:
+                    self.players.append(Player(x, y))  # 🔥 multiple players
+
+        if len(self.players) == 0:
+            raise ValueError("No player spawn (9) found in level")
+
+        if self.door is None:
+            raise ValueError("No door (3) found in level")
 
         self.done = False
-
         return self._get_state()
 
     def step(self, action):
         reward = -0.01
 
-        acceleration = 50
-        friction = 0.01
-        max_speed = 50
+        # 🔥 SAME action applied to ALL players
+        for player in self.players:
+            player.update(action, self.walls)
 
-        # --- INPUT → acceleration ---
-        if action == 0:      # left
-            self.player_vx -= acceleration
-        elif action == 1:    # right
-            self.player_vx += acceleration
-
-        # --- clamp speed ---
-        if self.player_vx > max_speed:
-            self.player_vx = max_speed
-        if self.player_vx < -max_speed:
-            self.player_vx = -max_speed
-
-        # --- friction (natural slowdown) ---
-        self.player_vx *= friction
-
-        # --- apply motion ---
-        new_x = self.player_x + self.player_vx
-        new_y = self.player_y
-
-        # collision (convert float → grid)
-        if self.level[new_y][int(new_x)] != 1:
-            self.player_x = new_x
-
-        tile = self.level[self.player_y][int(self.player_x)]
-
-
-        # door logic
-        if tile == 3:
-            reward += 10
-            self.done = True
+        # check win condition (any player reaches door)
+        for player in self.players:
+            if player.rect().colliderect(self.door.rect()):
+                reward += 10
+                self.done = True
+                break
 
         if self.render_mode:
             self._render()
@@ -78,44 +68,21 @@ class PlatformerEnv:
         return self._get_state(), reward, self.done
 
     def _get_state(self):
-        return [
-            self.player_x,
-            self.player_vx,
-        ]
+        state = []
+        for p in self.players:
+            state.extend([p.x, p.vx])
+        return state
 
     def _render(self):
         self.screen.fill((255, 255, 255))
 
-        for y in range(self.height):
-            for x in range(self.width):
-                tile = self.level[y][x]
+        for wall in self.walls:
+            wall.render(self.screen)
 
-                rect = pygame.Rect(
-                    x * TILE_SIZE,
-                    y * TILE_SIZE,
-                    TILE_SIZE,
-                    TILE_SIZE
-                )
+        self.door.render(self.screen)
 
-                if tile == WALL:
-                    pygame.draw.rect(self.screen, (80, 80, 80), rect)
-                elif tile == BUTTON:
-                    pygame.draw.rect(self.screen, (200, 50, 50), rect)
-                elif tile == DOOR:
-                    color = (0, 255, 0)
-                    pygame.draw.rect(self.screen, color, rect)
-
-        # player
-        pygame.draw.rect(
-            self.screen,
-            (50, 100, 255),
-            pygame.Rect(
-                int(self.player_x * TILE_SIZE),
-                self.player_y * TILE_SIZE,
-                TILE_SIZE,
-                TILE_SIZE
-            )
-        )
+        for player in self.players:
+            player.render(self.screen)
 
         pygame.display.flip()
         self.clock.tick(10)
