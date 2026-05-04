@@ -35,11 +35,11 @@ LEVELS = [
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,9,0,0,0,0,0,0,0,0,0,0,0,0,3,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,1],
+        [1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1],
+        [1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1],
+        [1,1,9,0,0,0,0,0,0,0,0,0,1,0,0,3,1,1],
+        [1,1,1,1,1,4,0,0,0,5,1,7,1,7,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
     #Level 4
@@ -75,7 +75,7 @@ MODE = "human"
 
 
 def run(mode):
-    level_index = 0
+    level_index = 2
     env = PlatformerEnv(LEVELS[level_index], render=True)
     state = env.reset()
 
@@ -85,6 +85,7 @@ def run(mode):
     running = True
     while running:
         action = 2
+        vertical_input = 0  # -1 up, +1 down, 0 none
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -96,10 +97,16 @@ def run(mode):
                 action = 0
             elif keys[pygame.K_RIGHT]:
                 action = 1
+            elif keys[pygame.K_UP]:
+                action = 4
+                vertical_input = 1
+            elif keys[pygame.K_DOWN]:
+                action = 3
+                vertical_input = 0
         else:
             action = agent.act(state)
 
-        state, reward, done = env.step(action)
+        state, reward, done = env.step(action, vertical_input)
 
         if done:
             print(f"Completed level {level_index + 1}")
