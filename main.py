@@ -37,11 +37,11 @@ LEVELS = [
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,9,0,0,0,0,0,0,0,0,0,0,0,0,3,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,1],
+        [1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1],
+        [1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1],
+        [1,1,9,0,0,0,0,0,0,0,0,0,1,0,0,3,1,1],
+        [1,1,1,1,1,4,0,0,0,4,1,5,1,5,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
     #Level 4
@@ -90,7 +90,8 @@ def run(mode):
 
     running = True
     while running:
-        action = 4
+        action = 2
+        vertical_input = 0  # -1 up, +1 down, 0 none
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -103,13 +104,15 @@ def run(mode):
             elif keys[pygame.K_RIGHT]:
                 action = 1
             elif keys[pygame.K_UP]:
-                action = 2
-            elif keys[pygame.K_DOWN]:
                 action = 3
+                vertical_input = 1
+            elif keys[pygame.K_DOWN]:
+                action = 4
+                vertical_input = 0
         else:
             action = agent.act(state)
 
-        state, reward, terminated, truncated, info = env.step(action)
+        state, reward, terminated, truncated, info = env.step(action, vertical_input)
 
         if terminated or truncated:
             if terminated:
