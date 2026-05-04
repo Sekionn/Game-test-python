@@ -5,10 +5,8 @@ from env.entities.game_object import TILE_SIZE
 WALL = 1
 EMPTY = 0
 DOOR = 3
-EXTENDER_RIGHT = 4
-EXTENDER_LEFT = 5
-Extender_DOWN = 6
-Extender_UP = 7
+EXTENDER_X = 4
+EXTENDER_Y = 5
 PLAYER = 9
 
 
@@ -35,10 +33,8 @@ class PlatformerEnv:
         self.players = []
         self.extenders = []
         self.extender_groups = {
-            ("x", -1): [],
-            ("x", 1): [],
-            ("y", -1): [],
-            ("y", 1): []
+            "x": [],
+            "y": []
         }
 
         self.door = None
@@ -51,22 +47,14 @@ class PlatformerEnv:
                     self.door = Door(x, y)
                 elif tile == PLAYER:
                     self.players.append(Player(x, y))
-                elif tile == EXTENDER_RIGHT:
+                elif tile == EXTENDER_X:
                     e = Extender(x, y, "x", 1)
                     self.extenders.append(e)
-                    self.extender_groups[(e.axis, e.direction)].append(e)
-                elif tile == EXTENDER_LEFT:
-                    e = Extender(x, y, "x", -1)
-                    self.extenders.append(e)
-                    self.extender_groups[(e.axis, e.direction)].append(e)
-                elif tile == Extender_DOWN:  
-                    e = Extender(x, y, "y", 1)
-                    self.extenders.append(e)
-                    self.extender_groups[(e.axis, e.direction)].append(e)
-                elif tile == Extender_UP:  
+                    self.extender_groups["x"].append(e)
+                elif tile == EXTENDER_Y:  
                     e = Extender(x, y, "y", -1)
                     self.extenders.append(e)
-                    self.extender_groups[(e.axis, e.direction)].append(e)
+                    self.extender_groups["y"].append(e)
 
         if len(self.players) == 0:
             raise ValueError("No player spawn (9) found in level")
@@ -131,7 +119,7 @@ class PlatformerEnv:
                 self.players,
                 self.walls,
                 self.door,
-                self.extender_groups[(extender.axis, extender.direction)]
+                self.extender_groups[extender.axis]
             )
 
         if self.render_mode:

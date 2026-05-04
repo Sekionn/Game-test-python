@@ -39,7 +39,7 @@ LEVELS = [
         [1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1],
         [1,1,9,0,0,0,0,0,0,0,0,0,1,0,0,3,1,1],
-        [1,1,1,1,1,4,0,0,0,5,1,7,1,7,1,1,1,1],
+        [1,1,1,1,1,4,0,0,0,4,1,5,1,5,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
     #Level 4
@@ -98,10 +98,10 @@ def run(mode):
             elif keys[pygame.K_RIGHT]:
                 action = 1
             elif keys[pygame.K_UP]:
-                action = 4
+                action = 3
                 vertical_input = 1
             elif keys[pygame.K_DOWN]:
-                action = 3
+                action = 4
                 vertical_input = 0
         else:
             action = agent.act(state)

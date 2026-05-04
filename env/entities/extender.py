@@ -92,49 +92,25 @@ class Extender(GameObject):
         return True
 
     def update(self, group_action, players, walls, door, group):
-        # --- STORE PREVIOUS POSITION (IMPORTANT FOR CARRYING) ---
         self.delta_x = 0
         self.delta_y = 0
 
-        if not hasattr(self, "prev_x"):
-            self.prev_x = self.x
+        axis_action = group_action[self.axis]  # 1 = extend, -1 = retract, 0 = idle
 
-        if not hasattr(self, "prev_y"):
-            self.prev_y = self.y
+        # 🔥 IMPORTANT: check if ANY extender in group has a player on top
+        group_has_player = False
+        for e in group:
+            if len(e.get_players_on_top(players)) > 0:
+                group_has_player = True
+                break
 
-        axis_action = group_action[self.axis]  # 1, -1, or 0
+        if not group_has_player:
+            return
 
         players_on_top = self.get_players_on_top(players)
 
-        if not players_on_top:
-            self.prev_x = self.x
-            self.prev_y = self.y
-            return
-        
-        # --- GROUP INPUT DECISION (shared across extenders) ---
-        group_extending = False
-        group_retracting = False
-
-        
-        if axis_action == 1:
-            if self.can_extend(walls, door):
-                self.length += 1
-
-        elif axis_action == -1:
-            if self.length > self.min_length:
-
-                # group constraint (all must agree)
-                can_retract = True
-
-                for other in group:
-                    if other.length <= other.min_length:
-                        can_retract = False
-                        break
-
-                if can_retract:
-                    self.length -= 1
         # --- EXTEND ---
-        if group_extending:
+        if axis_action == 1:
             if self.can_extend(walls, door):
                 self.length += 1
 
@@ -145,11 +121,10 @@ class Extender(GameObject):
                         player.y += self.direction
 
         # --- RETRACT ---
-        elif group_retracting:
+        elif axis_action == -1:
             if self.length > self.min_length:
 
                 can_retract = True
-
                 for other in group:
                     if other.length <= other.min_length:
                         can_retract = False
@@ -158,13 +133,11 @@ class Extender(GameObject):
                 if can_retract:
                     self.length -= 1
 
-        # --- CALCULATE MOVEMENT DELTA (THIS FRAME) ---
-        self.delta_x = self.x - self.prev_x
-        self.delta_y = self.y - self.prev_y
-
-        # --- UPDATE STORED POSITION FOR NEXT FRAME ---
-        self.prev_x = self.x
-        self.prev_y = self.y
+                    for player in players_on_top:
+                        if self.axis == "x":
+                            player.x -= self.direction
+                        elif self.axis == "y":
+                            player.y -= self.direction
 
     def render(self, screen):
         for rect in self.get_rects():
