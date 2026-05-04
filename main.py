@@ -77,15 +77,20 @@ MODE = "human"
 
 def run(mode):
     level_index = 0
-    env = PlatformerEnv(LEVELS[level_index], render=True, run_label=mode)
-    state = env.reset()
+    env = PlatformerEnv(
+        LEVELS[level_index],
+        render=True,
+        run_label=mode,
+        level_name=f"level_{level_index + 1}",
+    )
+    state, info = env.reset()
 
     clock = pygame.time.Clock()
     agent = RandomAgent() if mode == "ai" else None
 
     running = True
     while running:
-        action = 2
+        action = 4
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -97,22 +102,35 @@ def run(mode):
                 action = 0
             elif keys[pygame.K_RIGHT]:
                 action = 1
+            elif keys[pygame.K_UP]:
+                action = 2
+            elif keys[pygame.K_DOWN]:
+                action = 3
         else:
             action = agent.act(state)
 
-        state, reward, done = env.step(action)
+        state, reward, terminated, truncated, info = env.step(action)
 
-        if done:
-            print(f"Completed level {level_index + 1}")
-            level_index += 1
+        if terminated or truncated:
+            if terminated:
+                print(f"Completed level {level_index + 1}")
+                level_index += 1
+            else:
+                print(f"Level {level_index + 1} timed out")
 
             if level_index >= len(LEVELS):
                 print("All levels completed!")
                 running = False
                 continue
 
-            env = PlatformerEnv(LEVELS[level_index], render=True)
-            state = env.reset()
+            env.close()
+            env = PlatformerEnv(
+                LEVELS[level_index],
+                render=True,
+                run_label=mode,
+                level_name=f"level_{level_index + 1}",
+            )
+            state, info = env.reset()
 
         clock.tick(10)
 

@@ -1,0 +1,5 @@
+timestamp,run_label,level,outcome,ticks,inputs,elapsed_seconds,final_reward
+2026-05-04T15:56:24,ai,level_1,timeout,300,238,30.159,0.113
+2026-05-04T15:57:18,human,level_1,complete,131,36,13.178,136.060
+2026-05-04T15:57:46,human,level_2,complete,133,36,27.035,135.555
+2026-05-04T15:58:49,ai,level_1,timeout,300,246,30.174,-0.334
