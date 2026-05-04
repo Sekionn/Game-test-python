@@ -6,6 +6,7 @@ class Player(GameObject):
     def __init__(self, x, y):
         super().__init__(x, y, (50, 100, 255))
         self.vx = 0.0
+        self.on_ground = True
 
     def update(self, action, walls):
         acceleration = 0.2

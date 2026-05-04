@@ -1,6 +1,9 @@
 import pygame
 from env.platformer_env import PlatformerEnv
 from agents.random_agent import RandomAgent
+from agents.q_learning_agent import QLearningAgent
+import pickle
+import numpy as np
 
 LEVELS = [
     # Level 1
@@ -41,7 +44,7 @@ LEVELS = [
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,9,0,0,0,0,0,0,0,0,0,0,0,0,3,1,1],
+        [1,1,3,0,0,0,0,0,0,0,0,0,0,0,0,9,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
@@ -76,16 +79,25 @@ LEVELS = [
 
 ]
 
-MODE = "human"
+MODE = "ai"
 
 
 def run(mode):
+    pygame.init()
     level_index = 0
     env = PlatformerEnv(LEVELS[level_index], render=True)
-    state = env.reset()
+    state, _ = env.reset()
 
     clock = pygame.time.Clock()
-    agent = RandomAgent() if mode == "ai" else None
+
+    agent = None
+    q_table = None
+
+    if mode == "ai":
+        with open("q_table.pkl", "rb") as f:
+            q_table = pickle.load(f)
+
+        agent = QLearningAgent(q_table, env.action_space.n)
 
     running = True
     while running:
@@ -104,7 +116,8 @@ def run(mode):
         else:
             action = agent.act(state)
 
-        state, reward, done = env.step(action)
+        state, reward, terminated, truncated, _ = env.step(action)
+        done = terminated or truncated
 
         if done:
             print(f"Completed level {level_index + 1}")
@@ -116,7 +129,7 @@ def run(mode):
                 continue
 
             env = PlatformerEnv(LEVELS[level_index], render=True)
-            state = env.reset()
+            state, _ = env.reset()
 
         clock.tick(10)
 
