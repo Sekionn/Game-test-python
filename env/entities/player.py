@@ -52,10 +52,7 @@ class Player(GameObject):
                 collision = True
                 break
 
-        x_collision = any(future_x_rect.colliderect(wall.rect()) for wall in walls)
-        y_collision = any(future_y_rect.colliderect(wall.rect()) for wall in walls)
-
-        if not x_collision:
+        if not collision:
             self.x = new_x
         else:
             self.vx = 0
