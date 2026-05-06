@@ -85,7 +85,7 @@ class Player(GameObject):
             for rect in extender.get_rects():
 
                 # ONLY check landing from above
-                if self.vy > 0:
+                #if self.vy > 0:
                     # proper overlap check (not exact equality)
                     if (
                         self.x * TILE_SIZE + TILE_SIZE > rect.left and
