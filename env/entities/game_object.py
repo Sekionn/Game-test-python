@@ -12,7 +12,7 @@ class GameObject:
     def rect(self):
         return pygame.Rect(
             int(self.x * TILE_SIZE),
-            self.y * TILE_SIZE,
+            int(self.y * TILE_SIZE),
             TILE_SIZE,
             TILE_SIZE
         )

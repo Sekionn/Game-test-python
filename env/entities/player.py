@@ -21,9 +21,15 @@ class Player(GameObject):
             self.vx -= acceleration
         elif action == 1:
             self.vx += acceleration
+        elif action == 2:
+            self.vy -= acceleration
+        elif action == 3:
+            self.vy += acceleration
 
         self.vx = max(-max_speed, min(max_speed, self.vx))
+        self.vy = max(-max_speed, min(max_speed, self.vy))
         self.vx *= friction
+        self.vy *= friction
 
         # --- GRAVITY ---
         self.vy += gravity
@@ -31,6 +37,7 @@ class Player(GameObject):
 
         # --- HORIZONTAL MOVE ---
         new_x = self.x + self.vx
+        new_y = self.y + self.vy
 
         future_rect_x = pygame.Rect(
             int(new_x * TILE_SIZE),

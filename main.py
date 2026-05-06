@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 from env.platformer_env import PlatformerEnv
 from agents.random_agent import RandomAgent
@@ -73,11 +75,15 @@ LEVELS = [
 
 MODE = "human"
 
-
 def run(mode):
-    level_index = 2
-    env = PlatformerEnv(LEVELS[level_index], render=True)
-    state = env.reset()
+    level_index = 0
+    env = PlatformerEnv(
+        LEVELS[level_index],
+        render=True,
+        run_label=mode,
+        level_name=f"level_{level_index + 1}",
+    )
+    state, info = env.reset()
 
     clock = pygame.time.Clock()
     agent = RandomAgent() if mode == "ai" else None
@@ -106,19 +112,28 @@ def run(mode):
         else:
             action = agent.act(state)
 
-        state, reward, done = env.step(action, vertical_input)
+        state, reward, terminated, truncated, info = env.step(action, vertical_input)
 
-        if done:
-            print(f"Completed level {level_index + 1}")
-            level_index += 1
+        if terminated or truncated:
+            if terminated:
+                print(f"Completed level {level_index + 1}")
+                level_index += 1
+            else:
+                print(f"Level {level_index + 1} timed out")
 
             if level_index >= len(LEVELS):
                 print("All levels completed!")
                 running = False
                 continue
 
-            env = PlatformerEnv(LEVELS[level_index], render=True)
-            state = env.reset()
+            env.close()
+            env = PlatformerEnv(
+                LEVELS[level_index],
+                render=True,
+                run_label=mode,
+                level_name=f"level_{level_index + 1}",
+            )
+            state, info = env.reset()
 
         clock.tick(10)
 
@@ -126,4 +141,6 @@ def run(mode):
 
 
 if __name__ == "__main__":
-    run(MODE)
+    selected_mode = sys.argv[1] if len(sys.argv) > 1 else MODE
+    run(selected_mode)
+    
