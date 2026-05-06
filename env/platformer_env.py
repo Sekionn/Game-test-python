@@ -6,7 +6,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import pygame
-from env.entities import Player, Wall, Door, Extender
+from env.entities import Player, Wall, Door, Extender, ReversePlayer
 from env.entities.game_object import TILE_SIZE
 
 RESULTS_FILE = Path("game_results.txt")
@@ -15,11 +15,14 @@ RESULTS_HEADER = (
 )
 
 WALL = 1
-EMPTY = 0
 DOOR = 3
-EXTENDER_X = 4
-EXTENDER_Y = 5
+EXTENDER_X_RIGHT = 4
+EXTENDER_X_LEFT = 5
+
+EXTENDER_Y = 6
+REVERSEPLAYER = 8
 PLAYER = 9
+
 
 STEP_PENALTY = -0.01
 DISTANCE_REWARD_SCALE = 0.75
@@ -85,7 +88,6 @@ class PlatformerEnv(gym.Env):
         self.started_at = time.perf_counter()
         self.finished_at = None
         self.episode_recorded = False
-        self.last_action = 2
         self.walls = []
         self.players = []
         self.extenders = []
@@ -104,14 +106,20 @@ class PlatformerEnv(gym.Env):
                     self.door = Door(x, y)
                 elif tile == PLAYER:
                     self.players.append(Player(x, y))
-                elif tile == EXTENDER_X:
+                elif tile == EXTENDER_X_RIGHT:
                     e = Extender(x, y, "x", 1)
+                    self.extenders.append(e)
+                    self.extender_groups["x"].append(e)
+                elif tile == EXTENDER_X_LEFT:
+                    e = Extender(x, y, "x", -1)
                     self.extenders.append(e)
                     self.extender_groups["x"].append(e)
                 elif tile == EXTENDER_Y:  
                     e = Extender(x, y, "y", -1)
                     self.extenders.append(e)
                     self.extender_groups["y"].append(e)
+                elif tile == REVERSEPLAYER:
+                    self.players.append(ReversePlayer(x, y))
 
         if len(self.players) == 0:
             raise ValueError("No player spawn (9) found in level.")
@@ -134,20 +142,47 @@ class PlatformerEnv(gym.Env):
             self.has_moved = True
             self.input_count += 1
 
-        self.last_action = action
-
-        axis_pressure = {
-            ("x", -1): 0,
-            ("x", 1): 0,
-            ("y", -1): 0,
-            ("y", 1): 0
+        group_action = {
+            "x": 0,  # -1 retract, 1 extend
+            "y": 0
         }
 
-        if self.last_action == 2:
-            pass  # do nothing, but DO NOT exit function
+        if action in (0, 1):
+            # X axis controls
+            if action == 1:
+                group_action["x"] = 1
+            elif action == 0:
+                group_action["x"] = -1
 
-        for player in self.players:
-            player.update(action, self.walls, self.extenders)
+        elif action in (3, 4):
+            # Y axis controls
+            if action == 3:
+                group_action["y"] = 1
+            elif action == 4:
+                group_action["y"] = -1
+
+        extenders_by_action = sorted(
+            self.extenders,
+            key=lambda extender: extender.action_for_group_action(group_action)
+        )
+
+        # update retracting extenders before extending extenders
+        for extender in extenders_by_action:
+            extender.update(
+                group_action,
+                self.players,
+                self.walls,
+                self.door,
+                self.extender_groups[extender.axis]
+            )
+
+        for player in sorted(self.players, key=lambda player: player.y, reverse=True):
+            player.update(
+                action,
+                self.walls,
+                self.extenders,
+                self.players
+            )
 
         current_distance = self._distance_to_door()
         distance_delta = self.previous_distance_to_door - current_distance
@@ -187,38 +222,6 @@ class PlatformerEnv(gym.Env):
                 outcome = "complete" if terminated else "timeout"
                 self._record_episode(outcome, self._elapsed_seconds(), reward)
                 self.episode_recorded = True
-
-
-        group_action = {
-            "x": 0,  # -1 retract, 1 extend
-            "y": 0
-        }
-
-        for e in self.extenders:
-
-            if action in (0, 1):
-                # X axis controls
-                if action == 1:
-                    group_action["x"] = 1
-                elif action == 0:
-                    group_action["x"] = -1
-
-            elif action in (3, 4):
-                # Y axis controls
-                if action == 3:
-                    group_action["y"] = 1
-                elif action == 4:
-                    group_action["y"] = -1
-
-        # update extenders
-        for extender in self.extenders:
-            extender.update(
-                group_action,
-                self.players,
-                self.walls,
-                self.door,
-                self.extender_groups[extender.axis]
-            )
 
         if self.render_mode:
             self._render()
