@@ -74,6 +74,7 @@ LEVELS = [
 ]
 
 MODE = "human"
+PlayerName = "Sebastian"
 
 def run(mode):
     level_index = 0
@@ -82,6 +83,7 @@ def run(mode):
         render=True,
         run_label=mode,
         level_name=f"level_{level_index + 1}",
+        player_name=PlayerName
     )
     state, info = env.reset()
 
@@ -134,6 +136,7 @@ def run(mode):
                 render=True,
                 run_label=mode,
                 level_name=f"level_{level_index + 1}",
+                player_name=PlayerName
             )
             state, info = env.reset()
 

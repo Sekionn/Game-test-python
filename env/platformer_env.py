@@ -1,7 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 import time
-
+import csv
+import pandas as pd
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -9,10 +10,9 @@ import pygame
 from env.entities import Player, Wall, Door, Extender, ReversePlayer
 from env.entities.game_object import TILE_SIZE
 
-RESULTS_FILE = Path("game_results.txt")
-RESULTS_HEADER = (
-    "timestamp,run_label,level,outcome,ticks,inputs,elapsed_seconds,final_reward\n"
-)
+RESULTS_FILE = Path("game_results.csv")
+
+
 
 WALL = 1
 DOOR = 3
@@ -43,6 +43,7 @@ class PlatformerEnv(gym.Env):
         render=True,
         run_label="unknown",
         level_name="level_1",
+        player_name="ai",
         log_results=True,
         max_ticks=MAX_EPISODE_TICKS,
     ):
@@ -51,6 +52,7 @@ class PlatformerEnv(gym.Env):
         self.render_mode = "human" if render else None
         self.run_label = run_label
         self.level_name = level_name
+        self.player_name = player_name
         self.log_results = log_results
         self.max_ticks = max_ticks
 
@@ -84,6 +86,7 @@ class PlatformerEnv(gym.Env):
         self.done = False
         self.steps = 0
         self.input_count = 0
+        self.resets = 0
         self.has_moved = False
         self.started_at = time.perf_counter()
         self.finished_at = None
@@ -135,14 +138,7 @@ class PlatformerEnv(gym.Env):
         return self._get_obs(), self._get_info()
     
     def softReset(self, seed=None, options=None):
-        # super().softReset(seed=seed)
-        # self.done = False
-        # self.steps = 0
-        # self.input_count = 0
-        # self.has_moved = False
-        # self.started_at = time.perf_counter()
-        # self.finished_at = None
-        # self.episode_recorded = False
+        self.resets += 1
         self.walls = []
         self.players = []
         self.extenders = []
@@ -339,22 +335,40 @@ class PlatformerEnv(gym.Env):
         return max(0, max_reward * (target_value / actual_value))
 
     def _record_episode(self, outcome, elapsed_seconds, final_reward):
-        row = (
-            f"{datetime.now().isoformat(timespec='seconds')},"
-            f"{self.run_label},"
-            f"{self.level_name},"
-            f"{outcome},"
-            f"{self.steps},"
-            f"{self.input_count},"
-            f"{elapsed_seconds:.3f},"
-            f"{final_reward:.3f}\n"
-        )
+        data = []
 
         if not RESULTS_FILE.exists():
-            RESULTS_FILE.write_text(RESULTS_HEADER, encoding="utf-8")
+            data = [
+            ['timestamp', 'run_label','Player name', 'level', 'outcome', 'ticks', 'inputs', 'resets', 'elapsed_seconds', 'final_reward'],
+        ]
 
-        with RESULTS_FILE.open("a", encoding="utf-8") as results_file:
-            results_file.write(row)
+        if self.player_name == "":
+            self.player_name = "NO NAME!!!!"
+
+        data.append(
+            [
+                datetime.now().isoformat(timespec='seconds'),
+                self.run_label,
+                self.level_name,
+                self.player_name,
+                outcome,
+                self.steps,
+                self.input_count,
+                self.resets,
+                f"{elapsed_seconds:.3f},",
+                f"{final_reward:.3f}"
+            ]
+        )
+
+        with open(RESULTS_FILE, mode='a', newline='', encoding='utf-8') as file:
+            # Create a csv.writer object
+            writer = csv.writer(file, delimiter=";")
+            # Write data to the CSV file
+            writer.writerows(data)
+
+        # Print a confirmation message
+        print("CSV file '{csv_file_path}' created successfully.&quot;")
+
 
     def _render(self):
         self.screen.fill((255, 255, 255))
