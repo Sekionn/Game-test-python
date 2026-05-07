@@ -133,6 +133,61 @@ class PlatformerEnv(gym.Env):
             self._render()
 
         return self._get_obs(), self._get_info()
+    
+    def softReset(self, seed=None, options=None):
+        # super().softReset(seed=seed)
+        # self.done = False
+        # self.steps = 0
+        # self.input_count = 0
+        # self.has_moved = False
+        # self.started_at = time.perf_counter()
+        # self.finished_at = None
+        # self.episode_recorded = False
+        self.walls = []
+        self.players = []
+        self.extenders = []
+        self.extender_groups = {
+            "x": [],
+            "y": []
+        }
+
+        self.door = None
+
+        for y, row in enumerate(self.level):
+            for x, tile in enumerate(row):
+                if tile == WALL:
+                    self.walls.append(Wall(x, y))
+                elif tile == DOOR:
+                    self.door = Door(x, y)
+                elif tile == PLAYER:
+                    self.players.append(Player(x, y))
+                elif tile == EXTENDER_X_RIGHT:
+                    e = Extender(x, y, "x", 1)
+                    self.extenders.append(e)
+                    self.extender_groups["x"].append(e)
+                elif tile == EXTENDER_X_LEFT:
+                    e = Extender(x, y, "x", -1)
+                    self.extenders.append(e)
+                    self.extender_groups["x"].append(e)
+                elif tile == EXTENDER_Y:  
+                    e = Extender(x, y, "y", -1)
+                    self.extenders.append(e)
+                    self.extender_groups["y"].append(e)
+                elif tile == REVERSEPLAYER:
+                    self.players.append(ReversePlayer(x, y))
+
+        if len(self.players) == 0:
+            raise ValueError("No player spawn (9) found in level.")
+
+        if self.door is None:
+            raise ValueError("No door (3) found in level.")
+
+        self.previous_distance_to_door = self._distance_to_door()
+
+        if self.render_mode == "human":
+            self._render()
+
+        return self._get_obs(), self._get_info()
 
     def step(self, action):
         reward = STEP_PENALTY

@@ -106,9 +106,14 @@ def run(mode):
                 action = 3
             elif keys[pygame.K_DOWN]:
                 action = 4
+            elif keys[pygame.K_r]:
+                action = 5
         else:
             action = agent.act(state)
 
+        if  action == 5:
+            env.softReset()
+        
         state, reward, terminated, truncated, info = env.step(action)
 
         if terminated or truncated:
