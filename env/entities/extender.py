@@ -5,7 +5,10 @@ from .game_object import GameObject, TILE_SIZE
 class Extender(GameObject):
     def __init__(self, x, y, axis, direction):
         if axis == "x":
-            super().__init__(x, y, (200, 100, 50))
+            if direction == 1:
+                super().__init__(x, y, (200, 100, 50))
+            else:
+                super().__init__(x, y, (200, 0, 50))
         else:
             super().__init__(x, y, (60, 232, 251))
         self.axis = axis              # "x" or "y"
@@ -97,8 +100,9 @@ class Extender(GameObject):
         for extender in extenders:
             if extender is self:
                 continue
-
+        
             for rect in extender.collision_rects():
+                
                 if future_rect.colliderect(rect):
                     return False
 
@@ -155,7 +159,7 @@ class Extender(GameObject):
     def update(self, group_action, players, walls, door, group):
         axis_action = self.action_for_group_action(group_action)
 
-        # 🔥 IMPORTANT: check if ANY extender in group has a player on top
+        # IMPORTANT: check if ANY extender in group has a player on top
         players_on_top = self.get_players_on_top(players)
 
         # --- EXTEND ---

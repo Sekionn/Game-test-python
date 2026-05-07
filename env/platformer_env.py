@@ -134,7 +134,7 @@ class PlatformerEnv(gym.Env):
 
         return self._get_obs(), self._get_info()
 
-    def step(self, action, vertical_input=2):
+    def step(self, action):
         reward = STEP_PENALTY
         self.steps += 1
 
@@ -173,7 +173,7 @@ class PlatformerEnv(gym.Env):
                 self.players,
                 self.walls,
                 self.door,
-                self.extender_groups[extender.axis]
+                self.extenders
             )
 
         for player in sorted(self.players, key=lambda player: player.y, reverse=True):
@@ -321,10 +321,3 @@ class PlatformerEnv(gym.Env):
 
         pygame.display.flip()
         self.clock.tick(self.metadata["render_fps"])
-
-    def get_active_extenders(self):
-        active = []
-        for e in self.extenders:
-            if len(e.get_players_on_top(self.players)) > 0:
-                active.append(e)
-        return active
