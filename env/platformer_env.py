@@ -79,7 +79,7 @@ class PlatformerEnv(gym.Env):
         self.done = False
         return self._get_state(), {}
 
-    def step(self, action):
+    def step(self, action, vertical_input):
         reward = 0
 
         player = self.players[0]
