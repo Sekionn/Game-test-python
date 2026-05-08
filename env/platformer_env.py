@@ -13,7 +13,6 @@ from env.entities.game_object import TILE_SIZE
 RESULTS_FILE = Path("game_results.csv")
 
 
-
 WALL = 1
 DOOR = 3
 EXTENDER_X_RIGHT = 4
@@ -22,7 +21,6 @@ EXTENDER_X_LEFT = 5
 EXTENDER_Y = 6
 REVERSEPLAYER = 8
 PLAYER = 9
-
 
 STEP_PENALTY = -0.01
 DISTANCE_REWARD_SCALE = 0.75
@@ -46,6 +44,8 @@ class PlatformerEnv(gym.Env):
         player_name="ai",
         log_results=True,
         max_ticks=MAX_EPISODE_TICKS,
+        generation=None,
+        episode=None,
     ):
         super().__init__()
         self.level = level
@@ -55,6 +55,8 @@ class PlatformerEnv(gym.Env):
         self.player_name = player_name
         self.log_results = log_results
         self.max_ticks = max_ticks
+        self.generation = generation
+        self.episode = episode
 
         self.height = len(level)
         self.width = len(level[0])
@@ -302,7 +304,13 @@ class PlatformerEnv(gym.Env):
             "ticks": self.steps,
             "inputs": self.input_count,
             "level": self.level_name,
+            "generation": self.generation,
+            "episode": self.episode,
         }
+
+    def set_episode_context(self, generation=None, episode=None):
+        self.generation = generation
+        self.episode = episode
 
     def _find_tile(self, target_tile):
         for y, row in enumerate(self.level):

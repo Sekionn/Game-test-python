@@ -1,7 +1,9 @@
 import sys
 
 import pygame
-from env.platformer_env import PlatformerEnv
+from env.platformer_env import (
+    PlatformerEnv,
+)
 from agents.random_agent import RandomAgent
 
 LEVELS = [
@@ -74,7 +76,7 @@ LEVELS = [
 ]
 
 MODE = "human"
-PlayerName = "Sebastian"
+PlayerName = "Bob"
 
 def run(mode):
     level_index = 0

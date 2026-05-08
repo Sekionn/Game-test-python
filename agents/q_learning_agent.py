@@ -1,5 +1,6 @@
 import json
 import random
+from copy import deepcopy
 from pathlib import Path
 
 
@@ -57,6 +58,19 @@ class QLearningAgent:
 
     def finish_episode(self):
         self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
+
+    def clone(self):
+        agent = QLearningAgent(
+            actions=self.actions,
+            learning_rate=self.learning_rate,
+            discount=self.discount,
+            epsilon=self.epsilon,
+            epsilon_decay=self.epsilon_decay,
+            min_epsilon=self.min_epsilon,
+            state_precision=self.state_precision,
+        )
+        agent.q_table = deepcopy(self.q_table)
+        return agent
 
     def save(self, path):
         data = {
