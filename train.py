@@ -31,7 +31,7 @@ for episode in range(episodes):
         else:
             action = np.argmax(q_table[state])
 
-        next_state, reward, terminated, truncated, _ = env.step(action, 0)
+        next_state, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
 
         next_state = tuple(next_state)

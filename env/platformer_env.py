@@ -14,8 +14,6 @@ import gymnasium as gym
 
 RESULTS_FILE = Path("game_results.csv")
 
-
-
 WALL = 1
 DOOR = 3
 EXTENDER_X_RIGHT = 4
@@ -27,7 +25,16 @@ PLAYER = 9
 
 
 class PlatformerEnv(gym.Env):
-    def __init__(self, level, render=None):
+    def __init__(
+        self,
+        level,
+        render=False,
+        run_label="",
+        level_name="",
+        player_name="",
+        log_results=False,
+        max_ticks=2000,
+    ):
         super().__init__()
 
         self.max_steps = 2000
@@ -67,6 +74,12 @@ class PlatformerEnv(gym.Env):
     def reset(self, seed = None, options = None):
         super().reset(seed = seed)
 
+        self.input_count = 0
+        self.resets = 0
+        self.has_moved = False
+        self.episode_recorded = False
+        self.started_at = time.perf_counter()
+        self.finished_at = None
         self.steps = 0
 
         self.last_action = 2
@@ -112,8 +125,12 @@ class PlatformerEnv(gym.Env):
 
         self.done = False
         return self._get_state(), {}
+    
+    def softReset(self, seed=None, options=None):
+        def softReset(self):
+            self.reset()
 
-    def step(self, action, vertical_input):
+    def step(self, action):
         reward = 0
 
         player = self.players[0]
@@ -121,80 +138,7 @@ class PlatformerEnv(gym.Env):
         prev_dist = abs(player.x - self.door.x)
         if self.render_mode == "human":
             self._render()
-
-        return self._get_obs(), self._get_info()
     
-    def softReset(self, seed=None, options=None):
-        self.resets += 1
-        self.walls = []
-        self.players = []
-        self.extenders = []
-        self.extender_groups = {
-            "x": [],
-            "y": []
-        }
-
-        self.door = None
-
-        for y, row in enumerate(self.level):
-            for x, tile in enumerate(row):
-                if tile == WALL:
-                    self.walls.append(Wall(x, y))
-                elif tile == DOOR:
-                    self.door = Door(x, y)
-                elif tile == PLAYER:
-                    self.players.append(Player(x, y))
-                elif tile == EXTENDER_X_RIGHT:
-                    e = Extender(x, y, "x", 1)
-                    self.extenders.append(e)
-                    self.extender_groups["x"].append(e)
-                elif tile == EXTENDER_X_LEFT:
-                    e = Extender(x, y, "x", -1)
-                    self.extenders.append(e)
-                    self.extender_groups["x"].append(e)
-                elif tile == EXTENDER_Y:  
-                    e = Extender(x, y, "y", -1)
-                    self.extenders.append(e)
-                    self.extender_groups["y"].append(e)
-                elif tile == REVERSEPLAYER:
-                    self.players.append(ReversePlayer(x, y))
-
-        player = self.players[0]
-        new_dist = abs(player.x - self.door.x)
-
-        # reward for getting closer
-        reward = (prev_dist - new_dist) * 2.0
-
-        if new_dist > prev_dist:
-            reward -=0.1
-
-        # small penalty each step (prevents standing still)
-        reward -= 0.02
-
-        terminated = False
-        truncated = False
-
-        # check win condition (any player reaches door)
-        for player in self.players:
-            if player.rect().colliderect(self.door.rect()):
-                reward += 10
-                self.done = True
-                terminated = True
-                break
-        if len(self.players) == 0:
-            raise ValueError("No player spawn (9) found in level.")
-
-        if self.door is None:
-            raise ValueError("No door (3) found in level.")
-
-        self.previous_distance_to_door = self._distance_to_door()
-
-        if self.render_mode == "human":
-            self._render()
-
-        return self._get_obs(), self._get_info()
-
-    def step(self, action):
         reward = STEP_PENALTY
         self.steps += 1
 
@@ -246,7 +190,6 @@ class PlatformerEnv(gym.Env):
 
         current_distance = self._distance_to_door()
         distance_delta = self.previous_distance_to_door - current_distance
-        distance_reward = distance_delta * DISTANCE_REWARD_SCALE
         reward += distance_reward
         self.previous_distance_to_door = current_distance
 
