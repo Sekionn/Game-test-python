@@ -392,9 +392,8 @@ class PlatformerEnv(gym.Env):
         for player in self.players:
             player.render(self.screen)
 
-        if not self.has_moved:
-            timer = self.font.render(f"{self._elapsed_seconds():.1f}s", True, (20, 20, 20))
-            self.screen.blit(timer, (12, 12))
+        timer = self.font.render(f"{self._elapsed_seconds():.1f}s", True, (20, 20, 20))
+        self.screen.blit(timer, (12, 12))
 
         pygame.display.flip()
         self.clock.tick(self.metadata["render_fps"])

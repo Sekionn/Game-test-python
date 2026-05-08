@@ -104,7 +104,9 @@ def run(mode):
 
         if mode == "human":
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_LEFT]:
+            if keys[pygame.K_r]:
+                action = 5
+            elif keys[pygame.K_LEFT]:
                 action = 0
             elif keys[pygame.K_RIGHT]:
                 action = 1
@@ -112,8 +114,7 @@ def run(mode):
                 action = 3
             elif keys[pygame.K_DOWN]:
                 action = 4
-            elif keys[pygame.K_r]:
-                action = 5
+            
         else:
             action = agent.act(state)
 
