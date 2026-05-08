@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 from env.platformer_env import PlatformerEnv
 from agents.random_agent import RandomAgent
@@ -42,7 +44,7 @@ LEVELS = [
         [1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1],
         [1,1,9,0,0,0,0,0,0,0,0,0,1,0,0,3,1,1],
-        [1,1,1,1,1,4,0,0,0,4,1,5,1,5,1,1,1,1],
+        [1,1,1,1,1,4,0,0,0,5,1,6,1,6,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
     #Level 4
@@ -52,22 +54,22 @@ LEVELS = [
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,9,0,0,0,0,0,0,0,0,0,0,0,0,3,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,1],
+        [1,1,9,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1],
+        [1,1,1,1,1,4,0,0,0,0,0,0,5,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
     #Level 5
     [
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,8,0,0,0,0,0,0,0,0,0,0,3,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,0,0,0,0,0,0,0,0,0,0,0,9,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,9,0,0,0,0,0,0,0,0,0,0,0,0,3,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
@@ -75,13 +77,18 @@ LEVELS = [
 ]
 
 MODE = "ai"
-
+PlayerName = "Sebastian"
 
 def run(mode):
-    pygame.init()
-    level_index = 2
-    env = PlatformerEnv(LEVELS[level_index], render=True)
-    state, _ = env.reset()
+    level_index = 0
+    env = PlatformerEnv(
+        LEVELS[level_index],
+        render=True,
+        run_label=mode,
+        level_name=f"level_{level_index + 1}",
+        player_name=PlayerName
+    )
+    state, info = env.reset()
 
     clock = pygame.time.Clock()
 
@@ -97,7 +104,6 @@ def run(mode):
     running = True
     while running:
         action = 2
-        vertical_input = 0  # -1 up, +1 down, 0 none
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -111,27 +117,40 @@ def run(mode):
                 action = 1
             elif keys[pygame.K_UP]:
                 action = 3
-                vertical_input = 1
             elif keys[pygame.K_DOWN]:
                 action = 4
-                vertical_input = 0
+            elif keys[pygame.K_r]:
+                action = 5
         else:
             action = agent.act(state)
 
-        state, reward, terminated, truncated, _ = env.step(action, vertical_input)
+        if  action == 5:
+            env.softReset()
+        
+        state, reward, terminated, truncated, info = env.step(action)
         done = terminated or truncated
 
-        if done:
-            print(f"Completed level {level_index + 1}")
-            level_index += 1
+        if terminated or truncated:
+            if terminated:
+                print(f"Completed level {level_index + 1}")
+                level_index += 1
+            else:
+                print(f"Level {level_index + 1} timed out")
 
             if level_index >= len(LEVELS):
                 print("All levels completed!")
                 running = False
                 continue
 
-            env = PlatformerEnv(LEVELS[level_index], render=True)
-            state, _ = env.reset()
+            env.close()
+            env = PlatformerEnv(
+                LEVELS[level_index],
+                render=True,
+                run_label=mode,
+                level_name=f"level_{level_index + 1}",
+                player_name=PlayerName
+            )
+            state, info = env.reset()
 
         clock.tick(10)
 
@@ -139,4 +158,6 @@ def run(mode):
 
 
 if __name__ == "__main__":
-    run(MODE)
+    selected_mode = sys.argv[1] if len(sys.argv) > 1 else MODE
+    run(selected_mode)
+    
