@@ -191,7 +191,7 @@ class PlatformerEnv(gym.Env):
         reward = STEP_PENALTY
         self.steps += 1
 
-        if action in (ACTION_LEFT, ACTION_RIGHT, ACTION_UP, ACTION_DOWN):
+        if action in (0, 1, 2, 3):
             self.has_moved = True
             self.input_count += 1
 

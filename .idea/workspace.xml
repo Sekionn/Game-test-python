@@ -6,16 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="ceae7976-5da2-4d53-9c01-1f812ab59a91" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/agents/q_learning_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agents/q_learning_agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/env/entities/player.py" beforeDir="false" afterPath="$PROJECT_DIR$/env/entities/player.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/best_q_table.json" beforeDir="false" afterPath="$PROJECT_DIR$/best_q_table.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/env/platformer_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/env/platformer_env.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/game_results.txt" beforeDir="false" afterPath="$PROJECT_DIR$/game_results.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/summarize_results.py" beforeDir="false" afterPath="$PROJECT_DIR$/summarize_results.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train_q_learning.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_q_learning.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/watch_q_learning.py" beforeDir="false" afterPath="$PROJECT_DIR$/watch_q_learning.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

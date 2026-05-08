@@ -2,11 +2,6 @@ import sys
 
 import pygame
 from env.platformer_env import (
-    ACTION_DOWN,
-    ACTION_LEFT,
-    ACTION_NONE,
-    ACTION_RIGHT,
-    ACTION_UP,
     PlatformerEnv,
 )
 from agents.random_agent import RandomAgent
@@ -81,7 +76,7 @@ LEVELS = [
 ]
 
 MODE = "human"
-PlayerName = "Sebastian"
+PlayerName = "Bob"
 
 def run(mode):
     level_index = 0
@@ -108,9 +103,9 @@ def run(mode):
         if mode == "human":
             keys = pygame.key.get_pressed()
             if keys[pygame.K_LEFT]:
-                action = ACTION_LEFT
+                action = 0
             elif keys[pygame.K_RIGHT]:
-                action = ACTION_RIGHT
+                action = 1
             elif keys[pygame.K_UP]:
                 action = 3
             elif keys[pygame.K_DOWN]:
