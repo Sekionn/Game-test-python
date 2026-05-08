@@ -339,7 +339,7 @@ class PlatformerEnv(gym.Env):
 
         if not RESULTS_FILE.exists():
             data = [
-            ['timestamp', 'run_label','Player name', 'level', 'outcome', 'ticks', 'inputs', 'resets', 'elapsed_seconds', 'final_reward'],
+            ['timestamp', 'run_label', 'level', 'Player name', 'outcome', 'ticks', 'inputs', 'resets', 'elapsed_seconds', 'final_reward'],
         ]
 
         if self.player_name == "":
