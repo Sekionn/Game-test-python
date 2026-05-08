@@ -1,7 +1,14 @@
 import sys
 
 import pygame
-from env.platformer_env import PlatformerEnv
+from env.platformer_env import (
+    ACTION_DOWN,
+    ACTION_LEFT,
+    ACTION_NONE,
+    ACTION_RIGHT,
+    ACTION_UP,
+    PlatformerEnv,
+)
 from agents.random_agent import RandomAgent
 
 LEVELS = [
@@ -90,7 +97,7 @@ def run(mode):
 
     running = True
     while running:
-        action = 2
+        action = ACTION_NONE
         vertical_input = 0  # -1 up, +1 down, 0 none
 
         for event in pygame.event.get():
@@ -100,15 +107,15 @@ def run(mode):
         if mode == "human":
             keys = pygame.key.get_pressed()
             if keys[pygame.K_LEFT]:
-                action = 0
+                action = ACTION_LEFT
             elif keys[pygame.K_RIGHT]:
-                action = 1
+                action = ACTION_RIGHT
             elif keys[pygame.K_UP]:
-                action = 3
-                vertical_input = 1
+                action = ACTION_UP
+                vertical_input = -1
             elif keys[pygame.K_DOWN]:
-                action = 4
-                vertical_input = 0
+                action = ACTION_DOWN
+                vertical_input = 1
         else:
             action = agent.act(state)
 

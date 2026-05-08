@@ -11,7 +11,7 @@ from env.entities.game_object import TILE_SIZE
 
 RESULTS_FILE = Path("game_results.txt")
 RESULTS_HEADER = (
-    "timestamp,run_label,level,outcome,ticks,inputs,elapsed_seconds,final_reward\n"
+    "timestamp,run_label,level,generation,episode,outcome,ticks,inputs,elapsed_seconds,final_reward\n"
 )
 
 WALL = 1
@@ -20,6 +20,12 @@ DOOR = 3
 EXTENDER_X = 4
 EXTENDER_Y = 5
 PLAYER = 9
+
+ACTION_LEFT = 0
+ACTION_RIGHT = 1
+ACTION_NONE = 2
+ACTION_UP = 3
+ACTION_DOWN = 4
 
 STEP_PENALTY = -0.01
 DISTANCE_REWARD_SCALE = 0.75
@@ -42,6 +48,8 @@ class PlatformerEnv(gym.Env):
         level_name="level_1",
         log_results=True,
         max_ticks=MAX_EPISODE_TICKS,
+        generation=None,
+        episode=None,
     ):
         super().__init__()
         self.level = level
@@ -50,6 +58,8 @@ class PlatformerEnv(gym.Env):
         self.level_name = level_name
         self.log_results = log_results
         self.max_ticks = max_ticks
+        self.generation = generation
+        self.episode = episode
 
         self.height = len(level)
         self.width = len(level[0])
@@ -85,7 +95,7 @@ class PlatformerEnv(gym.Env):
         self.started_at = time.perf_counter()
         self.finished_at = None
         self.episode_recorded = False
-        self.last_action = 2
+        self.last_action = ACTION_NONE
         self.walls = []
         self.players = []
         self.extenders = []
@@ -126,11 +136,11 @@ class PlatformerEnv(gym.Env):
 
         return self._get_obs(), self._get_info()
 
-    def step(self, action, vertical_input=2):
+    def step(self, action, vertical_input=0):
         reward = STEP_PENALTY
         self.steps += 1
 
-        if action in (0, 1, 2, 3):
+        if action in (ACTION_LEFT, ACTION_RIGHT, ACTION_UP, ACTION_DOWN):
             self.has_moved = True
             self.input_count += 1
 
@@ -143,7 +153,7 @@ class PlatformerEnv(gym.Env):
             ("y", 1): 0
         }
 
-        if self.last_action == 2:
+        if self.last_action == ACTION_NONE:
             pass  # do nothing, but DO NOT exit function
 
         for player in self.players:
@@ -196,18 +206,18 @@ class PlatformerEnv(gym.Env):
 
         for e in self.extenders:
 
-            if action in (0, 1):
+            if action in (ACTION_LEFT, ACTION_RIGHT):
                 # X axis controls
-                if action == 1:
+                if action == ACTION_RIGHT:
                     group_action["x"] = 1
-                elif action == 0:
+                elif action == ACTION_LEFT:
                     group_action["x"] = -1
 
-            elif action in (3, 4):
+            elif action in (ACTION_UP, ACTION_DOWN):
                 # Y axis controls
-                if action == 3:
+                if action == ACTION_UP:
                     group_action["y"] = 1
-                elif action == 4:
+                elif action == ACTION_DOWN:
                     group_action["y"] = -1
 
         # update extenders
@@ -248,7 +258,13 @@ class PlatformerEnv(gym.Env):
             "ticks": self.steps,
             "inputs": self.input_count,
             "level": self.level_name,
+            "generation": self.generation,
+            "episode": self.episode,
         }
+
+    def set_episode_context(self, generation=None, episode=None):
+        self.generation = generation
+        self.episode = episode
 
     def _find_tile(self, target_tile):
         for y, row in enumerate(self.level):
@@ -285,6 +301,8 @@ class PlatformerEnv(gym.Env):
             f"{datetime.now().isoformat(timespec='seconds')},"
             f"{self.run_label},"
             f"{self.level_name},"
+            f"{self.generation if self.generation is not None else ''},"
+            f"{self.episode if self.episode is not None else ''},"
             f"{outcome},"
             f"{self.steps},"
             f"{self.input_count},"
@@ -325,3 +343,7 @@ class PlatformerEnv(gym.Env):
             if len(e.get_players_on_top(self.players)) > 0:
                 active.append(e)
         return active
+
+    def close(self):
+        if self.render_mode == "human":
+            pygame.quit()

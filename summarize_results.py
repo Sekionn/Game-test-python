@@ -22,13 +22,14 @@ def summarize_results():
 
     grouped_rows = defaultdict(list)
     for row in rows:
-        grouped_rows[(row["run_label"], row["level"])].append(row)
+        grouped_rows[(row["run_label"], row["level"], row["generation"])].append(row)
 
-    for (run_label, level), group in sorted(grouped_rows.items()):
+    for (run_label, level, generation), group in sorted(grouped_rows.items()):
         completed = [row for row in group if row["outcome"] == "complete"]
         completion_rate = len(completed) / len(group) * 100
 
-        print(f"{run_label} - {level}")
+        generation_label = f"generation {generation}" if generation else "no generation"
+        print(f"{run_label} - {level} - {generation_label}")
         print(f"  episodes: {len(group)}")
         print(f"  completed: {len(completed)} ({completion_rate:.1f}%)")
 
@@ -61,6 +62,8 @@ def _normalize_row(row):
     return {
         "run_label": row["run_label"],
         "level": row["level"],
+        "generation": row.get("generation") or "",
+        "episode": row.get("episode") or "",
         "outcome": row.get("outcome") or "complete",
         "ticks": float(row["ticks"]),
         "inputs": float(row["inputs"]),

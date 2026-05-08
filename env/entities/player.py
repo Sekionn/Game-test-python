@@ -21,9 +21,9 @@ class Player(GameObject):
             self.vx -= acceleration
         elif action == 1:
             self.vx += acceleration
-        elif action == 2:
-            self.vy -= acceleration
         elif action == 3:
+            self.vy -= acceleration
+        elif action == 4:
             self.vy += acceleration
 
         self.vx = max(-max_speed, min(max_speed, self.vx))
