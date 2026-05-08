@@ -48,7 +48,7 @@ LEVELS = [
         [1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1],
         [1,1,9,0,0,0,0,0,0,0,0,0,1,0,0,3,1,1],
-        [1,1,1,1,1,4,0,0,0,4,1,5,1,5,1,1,1,1],
+        [1,1,1,1,1,4,0,0,0,5,1,6,1,6,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
     #Level 4
@@ -58,22 +58,22 @@ LEVELS = [
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,9,0,0,0,0,0,0,0,0,0,0,0,0,3,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,1],
+        [1,1,9,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1],
+        [1,1,1,1,1,4,0,0,0,0,0,0,5,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,6,1,1,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
     #Level 5
     [
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,8,0,0,0,0,0,0,0,0,0,0,3,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,0,0,0,0,0,0,0,0,0,0,0,9,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
         [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-        [1,1,9,0,0,0,0,0,0,0,0,0,0,0,0,3,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
@@ -81,6 +81,7 @@ LEVELS = [
 ]
 
 MODE = "human"
+PlayerName = "Sebastian"
 
 def run(mode):
     level_index = 0
@@ -89,6 +90,7 @@ def run(mode):
         render=True,
         run_label=mode,
         level_name=f"level_{level_index + 1}",
+        player_name=PlayerName
     )
     state, info = env.reset()
 
@@ -97,8 +99,7 @@ def run(mode):
 
     running = True
     while running:
-        action = ACTION_NONE
-        vertical_input = 0  # -1 up, +1 down, 0 none
+        action = 2
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -111,15 +112,18 @@ def run(mode):
             elif keys[pygame.K_RIGHT]:
                 action = ACTION_RIGHT
             elif keys[pygame.K_UP]:
-                action = ACTION_UP
-                vertical_input = -1
+                action = 3
             elif keys[pygame.K_DOWN]:
-                action = ACTION_DOWN
-                vertical_input = 1
+                action = 4
+            elif keys[pygame.K_r]:
+                action = 5
         else:
             action = agent.act(state)
 
-        state, reward, terminated, truncated, info = env.step(action, vertical_input)
+        if  action == 5:
+            env.softReset()
+        
+        state, reward, terminated, truncated, info = env.step(action)
 
         if terminated or truncated:
             if terminated:
@@ -139,6 +143,7 @@ def run(mode):
                 render=True,
                 run_label=mode,
                 level_name=f"level_{level_index + 1}",
+                player_name=PlayerName
             )
             state, info = env.reset()
 

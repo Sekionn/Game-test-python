@@ -3,9 +3,9 @@ import pygame
 from .game_object import GameObject, TILE_SIZE
 
 
-class Player(GameObject):
+class ReversePlayer(GameObject):
     def __init__(self, x, y):
-        super().__init__(x, y, (50, 100, 255))
+        super().__init__(x, y, (182, 80, 180))
         self.vx = 0.0
         self.vy = 0.0
 
@@ -18,9 +18,9 @@ class Player(GameObject):
 
         dx = 0
         if action == 0:
-            dx = -1
-        elif action == 1:
             dx = 1
+        elif action == 1:
+            dx = -1
 
         self.vx = dx
 

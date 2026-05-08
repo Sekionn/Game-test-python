@@ -1,31 +1,26 @@
 from datetime import datetime
 from pathlib import Path
 import time
-
+import csv
+import pandas as pd
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import pygame
-from env.entities import Player, Wall, Door, Extender
+from env.entities import Player, Wall, Door, Extender, ReversePlayer
 from env.entities.game_object import TILE_SIZE
 
-RESULTS_FILE = Path("game_results.txt")
-RESULTS_HEADER = (
-    "timestamp,run_label,level,generation,episode,outcome,ticks,inputs,elapsed_seconds,final_reward\n"
-)
+RESULTS_FILE = Path("game_results.csv")
+
 
 WALL = 1
-EMPTY = 0
 DOOR = 3
-EXTENDER_X = 4
-EXTENDER_Y = 5
-PLAYER = 9
+EXTENDER_X_RIGHT = 4
+EXTENDER_X_LEFT = 5
 
-ACTION_LEFT = 0
-ACTION_RIGHT = 1
-ACTION_NONE = 2
-ACTION_UP = 3
-ACTION_DOWN = 4
+EXTENDER_Y = 6
+REVERSEPLAYER = 8
+PLAYER = 9
 
 STEP_PENALTY = -0.01
 DISTANCE_REWARD_SCALE = 0.75
@@ -46,6 +41,7 @@ class PlatformerEnv(gym.Env):
         render=True,
         run_label="unknown",
         level_name="level_1",
+        player_name="ai",
         log_results=True,
         max_ticks=MAX_EPISODE_TICKS,
         generation=None,
@@ -56,6 +52,7 @@ class PlatformerEnv(gym.Env):
         self.render_mode = "human" if render else None
         self.run_label = run_label
         self.level_name = level_name
+        self.player_name = player_name
         self.log_results = log_results
         self.max_ticks = max_ticks
         self.generation = generation
@@ -91,11 +88,11 @@ class PlatformerEnv(gym.Env):
         self.done = False
         self.steps = 0
         self.input_count = 0
+        self.resets = 0
         self.has_moved = False
         self.started_at = time.perf_counter()
         self.finished_at = None
         self.episode_recorded = False
-        self.last_action = ACTION_NONE
         self.walls = []
         self.players = []
         self.extenders = []
@@ -114,14 +111,68 @@ class PlatformerEnv(gym.Env):
                     self.door = Door(x, y)
                 elif tile == PLAYER:
                     self.players.append(Player(x, y))
-                elif tile == EXTENDER_X:
+                elif tile == EXTENDER_X_RIGHT:
                     e = Extender(x, y, "x", 1)
+                    self.extenders.append(e)
+                    self.extender_groups["x"].append(e)
+                elif tile == EXTENDER_X_LEFT:
+                    e = Extender(x, y, "x", -1)
                     self.extenders.append(e)
                     self.extender_groups["x"].append(e)
                 elif tile == EXTENDER_Y:  
                     e = Extender(x, y, "y", -1)
                     self.extenders.append(e)
                     self.extender_groups["y"].append(e)
+                elif tile == REVERSEPLAYER:
+                    self.players.append(ReversePlayer(x, y))
+
+        if len(self.players) == 0:
+            raise ValueError("No player spawn (9) found in level.")
+
+        if self.door is None:
+            raise ValueError("No door (3) found in level.")
+
+        self.previous_distance_to_door = self._distance_to_door()
+
+        if self.render_mode == "human":
+            self._render()
+
+        return self._get_obs(), self._get_info()
+    
+    def softReset(self, seed=None, options=None):
+        self.resets += 1
+        self.walls = []
+        self.players = []
+        self.extenders = []
+        self.extender_groups = {
+            "x": [],
+            "y": []
+        }
+
+        self.door = None
+
+        for y, row in enumerate(self.level):
+            for x, tile in enumerate(row):
+                if tile == WALL:
+                    self.walls.append(Wall(x, y))
+                elif tile == DOOR:
+                    self.door = Door(x, y)
+                elif tile == PLAYER:
+                    self.players.append(Player(x, y))
+                elif tile == EXTENDER_X_RIGHT:
+                    e = Extender(x, y, "x", 1)
+                    self.extenders.append(e)
+                    self.extender_groups["x"].append(e)
+                elif tile == EXTENDER_X_LEFT:
+                    e = Extender(x, y, "x", -1)
+                    self.extenders.append(e)
+                    self.extender_groups["x"].append(e)
+                elif tile == EXTENDER_Y:  
+                    e = Extender(x, y, "y", -1)
+                    self.extenders.append(e)
+                    self.extender_groups["y"].append(e)
+                elif tile == REVERSEPLAYER:
+                    self.players.append(ReversePlayer(x, y))
 
         if len(self.players) == 0:
             raise ValueError("No player spawn (9) found in level.")
@@ -136,7 +187,7 @@ class PlatformerEnv(gym.Env):
 
         return self._get_obs(), self._get_info()
 
-    def step(self, action, vertical_input=0):
+    def step(self, action):
         reward = STEP_PENALTY
         self.steps += 1
 
@@ -144,20 +195,47 @@ class PlatformerEnv(gym.Env):
             self.has_moved = True
             self.input_count += 1
 
-        self.last_action = action
-
-        axis_pressure = {
-            ("x", -1): 0,
-            ("x", 1): 0,
-            ("y", -1): 0,
-            ("y", 1): 0
+        group_action = {
+            "x": 0,  # -1 retract, 1 extend
+            "y": 0
         }
 
-        if self.last_action == ACTION_NONE:
-            pass  # do nothing, but DO NOT exit function
+        if action in (0, 1):
+            # X axis controls
+            if action == 1:
+                group_action["x"] = 1
+            elif action == 0:
+                group_action["x"] = -1
 
-        for player in self.players:
-            player.update(action, self.walls, self.extenders)
+        elif action in (3, 4):
+            # Y axis controls
+            if action == 3:
+                group_action["y"] = 1
+            elif action == 4:
+                group_action["y"] = -1
+
+        extenders_by_action = sorted(
+            self.extenders,
+            key=lambda extender: extender.action_for_group_action(group_action)
+        )
+
+        # update retracting extenders before extending extenders
+        for extender in extenders_by_action:
+            extender.update(
+                group_action,
+                self.players,
+                self.walls,
+                self.door,
+                self.extenders
+            )
+
+        for player in sorted(self.players, key=lambda player: player.y, reverse=True):
+            player.update(
+                action,
+                self.walls,
+                self.extenders,
+                self.players
+            )
 
         current_distance = self._distance_to_door()
         distance_delta = self.previous_distance_to_door - current_distance
@@ -197,38 +275,6 @@ class PlatformerEnv(gym.Env):
                 outcome = "complete" if terminated else "timeout"
                 self._record_episode(outcome, self._elapsed_seconds(), reward)
                 self.episode_recorded = True
-
-
-        group_action = {
-            "x": 0,  # -1 retract, 1 extend
-            "y": 0
-        }
-
-        for e in self.extenders:
-
-            if action in (ACTION_LEFT, ACTION_RIGHT):
-                # X axis controls
-                if action == ACTION_RIGHT:
-                    group_action["x"] = 1
-                elif action == ACTION_LEFT:
-                    group_action["x"] = -1
-
-            elif action in (ACTION_UP, ACTION_DOWN):
-                # Y axis controls
-                if action == ACTION_UP:
-                    group_action["y"] = 1
-                elif action == ACTION_DOWN:
-                    group_action["y"] = -1
-
-        # update extenders
-        for extender in self.extenders:
-            extender.update(
-                group_action,
-                self.players,
-                self.walls,
-                self.door,
-                self.extender_groups[extender.axis]
-            )
 
         if self.render_mode:
             self._render()
@@ -297,24 +343,40 @@ class PlatformerEnv(gym.Env):
         return max(0, max_reward * (target_value / actual_value))
 
     def _record_episode(self, outcome, elapsed_seconds, final_reward):
-        row = (
-            f"{datetime.now().isoformat(timespec='seconds')},"
-            f"{self.run_label},"
-            f"{self.level_name},"
-            f"{self.generation if self.generation is not None else ''},"
-            f"{self.episode if self.episode is not None else ''},"
-            f"{outcome},"
-            f"{self.steps},"
-            f"{self.input_count},"
-            f"{elapsed_seconds:.3f},"
-            f"{final_reward:.3f}\n"
-        )
+        data = []
 
         if not RESULTS_FILE.exists():
-            RESULTS_FILE.write_text(RESULTS_HEADER, encoding="utf-8")
+            data = [
+            ['timestamp', 'run_label', 'level', 'Player name', 'outcome', 'ticks', 'inputs', 'resets', 'elapsed_seconds', 'final_reward'],
+        ]
 
-        with RESULTS_FILE.open("a", encoding="utf-8") as results_file:
-            results_file.write(row)
+        if self.player_name == "":
+            self.player_name = "NO NAME!!!!"
+
+        data.append(
+            [
+                datetime.now().isoformat(timespec='seconds'),
+                self.run_label,
+                self.level_name,
+                self.player_name,
+                outcome,
+                self.steps,
+                self.input_count,
+                self.resets,
+                f"{elapsed_seconds:.3f},",
+                f"{final_reward:.3f}"
+            ]
+        )
+
+        with open(RESULTS_FILE, mode='a', newline='', encoding='utf-8') as file:
+            # Create a csv.writer object
+            writer = csv.writer(file, delimiter=";")
+            # Write data to the CSV file
+            writer.writerows(data)
+
+        # Print a confirmation message
+        print("CSV file '{csv_file_path}' created successfully.&quot;")
+
 
     def _render(self):
         self.screen.fill((255, 255, 255))
@@ -336,14 +398,3 @@ class PlatformerEnv(gym.Env):
 
         pygame.display.flip()
         self.clock.tick(self.metadata["render_fps"])
-
-    def get_active_extenders(self):
-        active = []
-        for e in self.extenders:
-            if len(e.get_players_on_top(self.players)) > 0:
-                active.append(e)
-        return active
-
-    def close(self):
-        if self.render_mode == "human":
-            pygame.quit()

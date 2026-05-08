@@ -17,5 +17,10 @@ class GameObject:
             TILE_SIZE
         )
 
+    def collision_rects(self):
+        return [self.rect()]
+
     def render(self, screen):
         pygame.draw.rect(screen, self.color, self.rect())
+        pygame.draw.rect(screen, (0,0,0), (self.rect().x,self.rect().y,60,60), 1)
+        
