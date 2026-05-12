@@ -2,7 +2,6 @@ from datetime import datetime
 from pathlib import Path
 import time
 import csv
-import pandas as pd
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -30,6 +29,15 @@ TARGET_INPUTS = 56
 FAST_COMPLETION_REWARD = 25
 INPUT_EFFICIENCY_REWARD = 25
 MAX_EPISODE_TICKS = 300
+ACTION_LEFT = 0
+ACTION_RIGHT = 1
+ACTION_NONE = 2
+ACTION_UP = 3
+ACTION_DOWN = 4
+ACTION_RESET = 5
+RESET_PENALTY = -2.0
+NO_PROGRESS_TICK_LIMIT = 20
+NO_PROGRESS_PENALTY = -0.05
 
 
 class PlatformerEnv(gym.Env):
@@ -61,9 +69,9 @@ class PlatformerEnv(gym.Env):
         self.height = len(level)
         self.width = len(level[0])
         self.door_x, self.door_y = self._find_tile(DOOR)
-        self.player_spawn_count = self._count_tile(PLAYER)
+        self.player_spawn_count = self._count_tile(PLAYER) + self._count_tile(REVERSEPLAYER)
 
-        self.action_space = spaces.Discrete(5)
+        self.action_space = spaces.Discrete(6)
         self.observation_space = spaces.Box(
             low=np.array([0.0, 0.0, -0.6, -0.6] * self.player_spawn_count, dtype=np.float32),
             high=np.array(
@@ -133,6 +141,8 @@ class PlatformerEnv(gym.Env):
             raise ValueError("No door (3) found in level.")
 
         self.previous_distance_to_door = self._distance_to_door()
+        self.best_distance_to_door = self.previous_distance_to_door
+        self.ticks_since_progress = 0
 
         if self.render_mode == "human":
             self._render()
@@ -181,6 +191,8 @@ class PlatformerEnv(gym.Env):
             raise ValueError("No door (3) found in level.")
 
         self.previous_distance_to_door = self._distance_to_door()
+        self.best_distance_to_door = self.previous_distance_to_door
+        self.ticks_since_progress = 0
 
         if self.render_mode == "human":
             self._render()
@@ -191,7 +203,35 @@ class PlatformerEnv(gym.Env):
         reward = STEP_PENALTY
         self.steps += 1
 
-        if action in (0, 1, 2, 3):
+        if action == ACTION_RESET:
+            self.softReset()
+            reward += RESET_PENALTY
+            truncated = self.steps >= self.max_ticks
+
+            if truncated:
+                self.done = True
+                self.finished_at = time.perf_counter()
+
+                if self.log_results and not self.episode_recorded:
+                    self._record_episode("timeout", self._elapsed_seconds(), reward)
+                    self.episode_recorded = True
+
+            if self.render_mode:
+                self._render()
+
+            info = self._get_info()
+            info.update(
+                {
+                    "distance_reward": 0,
+                    "completion_reward": 0,
+                    "speed_reward": 0,
+                    "input_reward": 0,
+                    "reset_penalty": RESET_PENALTY,
+                }
+            )
+            return self._get_obs(), reward, False, truncated, info
+
+        if action in (ACTION_LEFT, ACTION_RIGHT, ACTION_UP, ACTION_DOWN):
             self.has_moved = True
             self.input_count += 1
 
@@ -200,18 +240,18 @@ class PlatformerEnv(gym.Env):
             "y": 0
         }
 
-        if action in (0, 1):
+        if action in (ACTION_LEFT, ACTION_RIGHT):
             # X axis controls
-            if action == 1:
+            if action == ACTION_RIGHT:
                 group_action["x"] = 1
-            elif action == 0:
+            elif action == ACTION_LEFT:
                 group_action["x"] = -1
 
-        elif action in (3, 4):
+        elif action in (ACTION_UP, ACTION_DOWN):
             # Y axis controls
-            if action == 3:
+            if action == ACTION_UP:
                 group_action["y"] = 1
-            elif action == 4:
+            elif action == ACTION_DOWN:
                 group_action["y"] = -1
 
         extenders_by_action = sorted(
@@ -242,6 +282,15 @@ class PlatformerEnv(gym.Env):
         distance_reward = distance_delta * DISTANCE_REWARD_SCALE
         reward += distance_reward
         self.previous_distance_to_door = current_distance
+
+        if current_distance < self.best_distance_to_door:
+            self.best_distance_to_door = current_distance
+            self.ticks_since_progress = 0
+        else:
+            self.ticks_since_progress += 1
+
+        if self.ticks_since_progress >= NO_PROGRESS_TICK_LIMIT:
+            reward += NO_PROGRESS_PENALTY
 
         terminated = any(player.rect().colliderect(self.door.rect()) for player in self.players)
         truncated = self.steps >= self.max_ticks
@@ -284,9 +333,12 @@ class PlatformerEnv(gym.Env):
             {
                 "distance_reward": distance_reward,
                 "completion_reward": completion_reward,
-                "speed_reward": speed_reward,
-                "input_reward": input_reward,
-            }
+                    "speed_reward": speed_reward,
+                    "input_reward": input_reward,
+                    "no_progress_penalty": NO_PROGRESS_PENALTY
+                    if self.ticks_since_progress >= NO_PROGRESS_TICK_LIMIT
+                    else 0,
+                }
         )
 
         return self._get_obs(), reward, terminated, truncated, info
@@ -303,6 +355,8 @@ class PlatformerEnv(gym.Env):
             "distance_to_door": self._distance_to_door(),
             "ticks": self.steps,
             "inputs": self.input_count,
+            "resets": self.resets,
+            "ticks_since_progress": self.ticks_since_progress,
             "level": self.level_name,
             "generation": self.generation,
             "episode": self.episode,
@@ -347,7 +401,20 @@ class PlatformerEnv(gym.Env):
 
         if not RESULTS_FILE.exists():
             data = [
-            ['timestamp', 'run_label', 'level', 'Player name', 'outcome', 'ticks', 'inputs', 'resets', 'elapsed_seconds', 'final_reward'],
+                [
+                    'timestamp',
+                    'run_label',
+                    'level',
+                    'generation',
+                    'episode',
+                    'player_name',
+                    'outcome',
+                    'ticks',
+                    'inputs',
+                    'resets',
+                    'elapsed_seconds',
+                    'final_reward'
+                ],
         ]
 
         if self.player_name == "":
@@ -358,12 +425,14 @@ class PlatformerEnv(gym.Env):
                 datetime.now().isoformat(timespec='seconds'),
                 self.run_label,
                 self.level_name,
+                self.generation if self.generation is not None else '',
+                self.episode if self.episode is not None else '',
                 self.player_name,
                 outcome,
                 self.steps,
                 self.input_count,
                 self.resets,
-                f"{elapsed_seconds:.3f},",
+                f"{elapsed_seconds:.3f}",
                 f"{final_reward:.3f}"
             ]
         )
@@ -373,9 +442,6 @@ class PlatformerEnv(gym.Env):
             writer = csv.writer(file, delimiter=";")
             # Write data to the CSV file
             writer.writerows(data)
-
-        # Print a confirmation message
-        print("CSV file '{csv_file_path}' created successfully.&quot;")
 
 
     def _render(self):
@@ -398,3 +464,7 @@ class PlatformerEnv(gym.Env):
 
         pygame.display.flip()
         self.clock.tick(self.metadata["render_fps"])
+
+    def close(self):
+        if self.render_mode == "human":
+            pygame.quit()

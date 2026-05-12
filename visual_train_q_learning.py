@@ -10,10 +10,12 @@ from main import LEVELS
 LEVEL_INDEX = 0
 GENERATIONS = 5
 ATTEMPTS_PER_GENERATION = 100
-VISIBLE_ATTEMPTS = 20
+VISIBLE_ATTEMPTS = 10
+SIMULATION_STEPS_PER_FRAME = 1
 Q_TABLE_PATH = "q_table.json"
 BEST_Q_TABLE_PATH = "best_q_table.json"
 EVALUATION_ATTEMPTS = 5
+EVENT_CHECK_INTERVAL = 5
 
 MINI_TILE_SIZE = 16
 GRID_COLUMNS = 5
@@ -79,37 +81,47 @@ def visual_train():
         finished_attempts = 0
 
         while running and finished_attempts < ATTEMPTS_PER_GENERATION:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
+            running = _handle_events()
 
-            for index, env in enumerate(envs):
-                if env is None:
-                    continue
+            for _ in range(SIMULATION_STEPS_PER_FRAME):
+                for index, env in enumerate(envs):
+                    if not running:
+                        break
 
-                action = agent.act(states[index], training=True)
-                next_state, reward, terminated, truncated, info = env.step(action)
-                agent.learn(states[index], action, reward, next_state, terminated or truncated)
-                states[index] = next_state
-                rewards[index] += reward
+                    if index % EVENT_CHECK_INTERVAL == 0:
+                        running = _handle_events()
+                        if not running:
+                            break
 
-                if terminated or truncated:
-                    if terminated:
-                        completed += 1
+                    if env is None:
+                        continue
 
-                    finished_attempts += 1
-                    agent.finish_episode()
-                    env.close()
+                    action = agent.act(states[index], training=True)
+                    next_state, reward, terminated, truncated, info = env.step(action)
+                    agent.learn(states[index], action, reward, next_state, terminated or truncated)
+                    states[index] = next_state
+                    rewards[index] += reward
 
-                    if next_attempt <= ATTEMPTS_PER_GENERATION:
-                        env, state = _new_env(level, level_name, generation, next_attempt)
-                        envs[index] = env
-                        states[index] = state
-                        rewards[index] = 0
-                        active_attempts[index] = next_attempt
-                        next_attempt += 1
-                    else:
-                        envs[index] = None
+                    if terminated or truncated:
+                        if terminated:
+                            completed += 1
+
+                        finished_attempts += 1
+                        agent.finish_episode()
+                        env.close()
+
+                        if next_attempt <= ATTEMPTS_PER_GENERATION:
+                            env, state = _new_env(level, level_name, generation, next_attempt)
+                            envs[index] = env
+                            states[index] = state
+                            rewards[index] = 0
+                            active_attempts[index] = next_attempt
+                            next_attempt += 1
+                        else:
+                            envs[index] = None
+
+                if not running:
+                    break
 
             _draw(
                 screen,
@@ -165,6 +177,14 @@ def _new_env(level, level_name, generation, attempt):
     )
     state, info = env.reset()
     return env, state
+
+
+def _handle_events():
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            return False
+
+    return True
 
 
 def _evaluate_agent(agent, level, level_name, generation):

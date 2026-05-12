@@ -2,6 +2,12 @@ import sys
 
 import pygame
 from env.platformer_env import (
+    ACTION_DOWN,
+    ACTION_LEFT,
+    ACTION_NONE,
+    ACTION_RESET,
+    ACTION_RIGHT,
+    ACTION_UP,
     PlatformerEnv,
 )
 from agents.random_agent import RandomAgent
@@ -94,7 +100,7 @@ def run(mode):
 
     running = True
     while running:
-        action = 2
+        action = ACTION_NONE
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -103,20 +109,17 @@ def run(mode):
         if mode == "human":
             keys = pygame.key.get_pressed()
             if keys[pygame.K_LEFT]:
-                action = 0
+                action = ACTION_LEFT
             elif keys[pygame.K_RIGHT]:
-                action = 1
+                action = ACTION_RIGHT
             elif keys[pygame.K_UP]:
-                action = 3
+                action = ACTION_UP
             elif keys[pygame.K_DOWN]:
-                action = 4
+                action = ACTION_DOWN
             elif keys[pygame.K_r]:
-                action = 5
+                action = ACTION_RESET
         else:
             action = agent.act(state)
-
-        if  action == 5:
-            env.softReset()
         
         state, reward, terminated, truncated, info = env.step(action)
 

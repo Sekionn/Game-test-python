@@ -2,22 +2,22 @@ import csv
 from collections import defaultdict
 from pathlib import Path
 
-RESULTS_FILE = Path("game_results.txt")
+RESULTS_FILE = Path("game_results.csv")
 
 
 def summarize_results():
-    """Print a compact comparison of human and AI runs from game_results.txt.
+    """Print a compact comparison of human and AI runs from game_results.csv.
 
     The environment appends one row per episode. This script groups those rows by
     run label and level, then reports completion rate plus timing/input stats.
     """
     if not RESULTS_FILE.exists():
-        print("No game_results.txt file found yet.")
+        print("No game_results.csv file found yet.")
         return
 
     rows = _read_rows()
     if not rows:
-        print("game_results.txt does not contain any readable result rows yet.")
+        print("game_results.csv does not contain any readable result rows yet.")
         return
 
     grouped_rows = defaultdict(list)
@@ -46,7 +46,7 @@ def summarize_results():
 def _read_rows():
     rows = []
     with RESULTS_FILE.open("r", encoding="utf-8", newline="") as results_file:
-        reader = csv.DictReader(results_file)
+        reader = csv.DictReader(results_file, delimiter=";")
         for row in reader:
             normalized = _normalize_row(row)
             if normalized is not None:
