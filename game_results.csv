@@ -6167,3 +6167,100 @@ timestamp;run_label;level;Player name;outcome;ticks;inputs;resets;elapsed_second
 2026-05-08T13:31:17;human;level_1;;;Bob;complete;24;13;0;2.418;150.740
 2026-05-08T13:31:23;human;level_2;;;Bob;complete;27;13;0;5.653;150.740
 2026-05-08T13:31:38;human;level_3;;;Bob;complete;89;29;0;14.611;141.470
+2026-05-12T19:39:30;human;level_1;;;Bob;complete;22;13;0;2.218;150.740
+2026-05-12T19:39:35;human;level_2;;;Bob;complete;13;13;0;4.166;150.740
+2026-05-12T19:39:45;human;level_3;;;Bob;complete;51;27;0;9.237;150.740
+2026-05-12T19:43:46;human;level_1;;;Artur Tadeusz Felix Mazurkiewicz;complete;24;13;0;2.414;150.740
+2026-05-12T19:43:52;human;level_2;;;Artur Tadeusz Felix Mazurkiewicz;complete;22;13;0;5.152;150.740
+2026-05-12T19:44:03;human;level_3;;;Artur Tadeusz Felix Mazurkiewicz;complete;50;27;0;10.182;150.740
+2026-05-12T19:44:33;human;level_4;;;Artur Tadeusz Felix Mazurkiewicz;complete;201;95;1;30.414;122.442
+2026-05-12T19:45:07;human;level_5;;;Artur Tadeusz Felix Mazurkiewicz;complete;29;11;0;33.344;150.740
+2026-05-12T19:48:04;human;level_1;;;Artur Tadeusz Felix Mazurkiewicz;complete;24;13;0;2.418;150.740
+2026-05-12T19:48:09;human;level_2;;;Artur Tadeusz Felix Mazurkiewicz;complete;18;13;0;4.629;150.740
+2026-05-12T19:48:21;human;level_3;;;Artur Tadeusz Felix Mazurkiewicz;complete;64;29;0;11.054;147.615
+2026-05-12T19:48:36;human;level_4;;;Artur Tadeusz Felix Mazurkiewicz;complete;38;16;0;14.873;150.740
+2026-05-12T19:48:53;human;level_5;;;Artur Tadeusz Felix Mazurkiewicz;complete;11;11;0;15.971;150.740
+2026-05-12T19:49:02;human;level_1;;;Artur Tadeusz Felix Mazurkiewicz;complete;20;13;0;2.021;150.740
+2026-05-12T19:49:06;human;level_2;;;Artur Tadeusz Felix Mazurkiewicz;complete;13;13;0;3.761;150.740
+2026-05-12T19:49:15;human;level_3;;;Artur Tadeusz Felix Mazurkiewicz;complete;45;31;0;8.197;150.740
+2026-05-12T19:49:27;human;level_4;;;Artur Tadeusz Felix Mazurkiewicz;complete;34;17;0;11.633;150.740
+2026-05-12T19:49:41;human;level_5;;;Artur Tadeusz Felix Mazurkiewicz;complete;11;11;0;12.722;150.740
+2026-05-12T19:49:47;human;level_1;;;Artur Tadeusz Felix Mazurkiewicz;complete;20;13;0;2.014;150.740
+2026-05-12T19:49:51;human;level_2;;;Artur Tadeusz Felix Mazurkiewicz;complete;13;13;0;3.370;150.740
+2026-05-12T19:49:59;human;level_3;;;Artur Tadeusz Felix Mazurkiewicz;complete;41;32;0;7.480;150.740
+2026-05-12T19:50:09;human;level_4;;;Artur Tadeusz Felix Mazurkiewicz;complete;23;17;0;9.803;150.740
+2026-05-12T19:50:20;human;level_5;;;Artur Tadeusz Felix Mazurkiewicz;complete;11;11;0;10.917;150.740
+2026-05-12T19:50:26;human;level_1;;;Artur Tadeusz Felix Mazurkiewicz;complete;18;13;0;1.826;150.740
+2026-05-12T19:50:30;human;level_2;;;Artur Tadeusz Felix Mazurkiewicz;complete;13;13;0;3.198;150.740
+2026-05-12T19:50:39;human;level_3;;;Artur Tadeusz Felix Mazurkiewicz;complete;52;28;0;8.376;150.740
+2026-05-12T19:50:50;human;level_4;;;Artur Tadeusz Felix Mazurkiewicz;complete;21;16;0;10.514;150.740
+2026-05-12T19:51:02;human;level_5;;;Artur Tadeusz Felix Mazurkiewicz;complete;11;11;0;11.626;150.740
+2026-05-12T19:51:07;human;level_1;;;Artur Tadeusz Felix Mazurkiewicz;complete;14;13;0;1.410;150.740
+2026-05-12T19:51:10;human;level_2;;;Artur Tadeusz Felix Mazurkiewicz;complete;13;13;0;2.703;150.740
+2026-05-12T19:51:17;human;level_3;;;Artur Tadeusz Felix Mazurkiewicz;complete;34;28;0;6.132;150.740
+2026-05-12T19:51:27;human;level_4;;;Artur Tadeusz Felix Mazurkiewicz;complete;30;16;0;9.152;150.740
+2026-05-12T19:51:37;human;level_5;;;Artur Tadeusz Felix Mazurkiewicz;complete;11;11;0;10.264;150.740
+2026-05-12T19:54:33;human;level_1;;;Benjamin Paddags;complete;69;13;0;6.944;146.030
+2026-05-12T19:54:43;human;level_2;;;Benjamin Paddags;complete;24;14;0;9.733;150.740
+2026-05-12T19:54:58;human;level_3;;;Benjamin Paddags;complete;44;30;0;14.162;150.740
+2026-05-12T19:55:15;human;level_4;;;Benjamin Paddags;complete;26;20;0;16.780;150.740
+2026-05-12T19:55:34;human;level_5;;;Benjamin Paddags;complete;21;15;0;18.868;150.740
+2026-05-12T19:55:43;human;level_1;;;Benjamin Paddags;complete;26;13;0;2.613;150.740
+2026-05-12T19:55:50;human;level_2;;;Benjamin Paddags;complete;30;13;0;5.676;150.740
+2026-05-12T19:56:03;human;level_3;;;Benjamin Paddags;complete;74;50;0;13.111;144.659
+2026-05-12T19:56:35;human;level_4;;;Benjamin Paddags;complete;174;101;1;30.640;122.647
+2026-05-12T19:57:07;human;level_5;;;Benjamin Paddags;complete;11;11;0;31.714;150.740
+2026-05-12T19:57:13;human;level_1;;;Benjamin Paddags;complete;23;13;0;2.315;150.740
+2026-05-12T19:57:18;human;level_2;;;Benjamin Paddags;complete;13;13;0;3.655;150.740
+2026-05-12T19:57:25;human;level_3;;;Benjamin Paddags;complete;35;33;0;7.205;150.740
+2026-05-12T19:57:43;human;level_4;;;Benjamin Paddags;complete;101;68;2;17.463;135.190
+2026-05-12T19:58:03;human;level_5;;;Benjamin Paddags;complete;11;11;0;18.561;150.740
+2026-05-12T19:58:08;human;level_1;;;Benjamin Paddags;complete;21;15;0;2.112;150.740
+2026-05-12T19:58:13;human;level_2;;;Benjamin Paddags;complete;13;13;0;3.461;150.740
+2026-05-12T19:58:21;human;level_3;;;Benjamin Paddags;complete;48;40;0;8.270;150.740
+2026-05-12T19:58:35;human;level_4;;;Benjamin Paddags;complete;47;29;1;13.044;150.740
+2026-05-12T19:58:50;human;level_5;;;Benjamin Paddags;complete;11;11;0;14.142;150.740
+2026-05-12T19:58:58;human;level_1;;;Benjamin Paddags;complete;18;13;0;1.809;150.740
+2026-05-12T19:59:02;human;level_2;;;Benjamin Paddags;complete;13;13;0;3.144;150.740
+2026-05-12T19:59:09;human;level_3;;;Benjamin Paddags;complete;37;32;0;6.868;150.740
+2026-05-12T19:59:19;human;level_4;;;Benjamin Paddags;complete;23;18;0;9.212;150.740
+2026-05-12T19:59:30;human;level_5;;;Benjamin Paddags;complete;11;11;0;10.319;150.740
+2026-05-12T20:00:11;human;level_1;;;Benjamin Paddags;complete;15;13;0;1.509;150.740
+2026-05-12T20:00:14;human;level_2;;;Benjamin Paddags;complete;13;13;0;2.880;150.740
+2026-05-12T20:00:21;human;level_3;;;Benjamin Paddags;complete;34;33;0;6.265;150.740
+2026-05-12T20:00:32;human;level_4;;;Benjamin Paddags;complete;39;26;0;10.215;150.740
+2026-05-12T20:00:44;human;level_5;;;Benjamin Paddags;complete;11;11;0;11.312;150.740
+2026-05-12T20:03:57;human;level_1;;;Darren Birk Gleisner;complete;43;13;0;4.329;150.740
+2026-05-12T20:04:10;human;level_2;;;Darren Birk Gleisner;complete;79;41;0;12.676;143.462
+2026-05-12T20:04:36;human;level_3;;;Darren Birk Gleisner;complete;126;77;0;25.359;130.033
+2026-05-12T20:05:32;human;level_4;;;Darren Birk Gleisner;timeout;300;143;3;55.738;-0.010
+2026-05-12T20:06:37;human;level_4;;;Darren Birk Gleisner;complete;83;30;0;64.125;142.607
+2026-05-12T20:07:50;human;level_5;;;Darren Birk Gleisner;complete;81;19;0;72.266;143.024
+2026-05-12T20:07:59;human;level_1;;;Darren Birk Gleisner;complete;36;13;0;3.626;150.740
+2026-05-12T20:08:07;human;level_2;;;Darren Birk Gleisner;complete;33;13;0;7.026;150.740
+2026-05-12T20:08:23;human;level_3;;;Darren Birk Gleisner;complete;84;36;0;15.404;142.407
+2026-05-12T20:08:46;human;level_4;;;Darren Birk Gleisner;complete;70;25;0;22.514;145.740
+2026-05-12T20:09:11;human;level_5;;;Darren Birk Gleisner;complete;17;11;0;24.190;150.740
+2026-05-12T20:09:17;human;level_1;;;Darren Birk Gleisner;complete;20;13;0;2.016;150.740
+2026-05-12T20:09:21;human;level_2;;;Darren Birk Gleisner;complete;13;13;0;3.350;150.740
+2026-05-12T20:09:32;human;level_3;;;Darren Birk Gleisner;complete;69;38;0;10.290;146.030
+2026-05-12T20:09:47;human;level_4;;;Darren Birk Gleisner;complete;34;18;0;13.708;150.740
+2026-05-12T20:10:02;human;level_5;;;Darren Birk Gleisner;complete;11;11;0;14.794;150.740
+2026-05-12T20:10:09;human;level_1;;;Darren Birk Gleisner;complete;21;13;0;2.115;150.740
+2026-05-12T20:10:13;human;level_2;;;Darren Birk Gleisner;complete;13;13;0;3.451;150.740
+2026-05-12T20:10:24;human;level_3;;;Darren Birk Gleisner;complete;67;37;0;10.230;146.636
+2026-05-12T20:10:39;human;level_4;;;Darren Birk Gleisner;complete;44;18;0;14.619;150.740
+2026-05-12T20:10:57;human;level_5;;;Darren Birk Gleisner;complete;29;11;0;17.544;150.740
+2026-05-12T20:11:03;human;level_1;;;Darren Birk Gleisner;complete;23;13;0;2.317;150.740
+2026-05-12T20:11:08;human;level_2;;;Darren Birk Gleisner;complete;13;13;0;3.666;150.740
+2026-05-12T20:11:18;human;level_3;;;Darren Birk Gleisner;complete;58;30;0;9.474;149.878
+2026-05-12T20:11:31;human;level_4;;;Darren Birk Gleisner;complete;35;17;0;13.034;150.740
+2026-05-12T20:11:46;human;level_5;;;Darren Birk Gleisner;complete;11;11;0;14.118;150.740
+2026-05-12T20:11:51;human;level_1;;;Darren Birk Gleisner;complete;18;13;0;1.811;150.740
+2026-05-12T20:11:55;human;level_2;;;Darren Birk Gleisner;complete;13;13;0;3.133;150.740
+2026-05-12T20:12:04;human;level_3;;;Darren Birk Gleisner;complete;48;33;0;7.969;150.740
+2026-05-12T20:12:16;human;level_4;;;Darren Birk Gleisner;complete;35;18;0;11.513;150.740
+2026-05-12T20:12:29;human;level_5;;;Darren Birk Gleisner;complete;11;11;0;12.614;150.740
+2026-05-12T20:13:31;ai;level_1;;;ai;timeout;300;236;0;30.187;-0.060
+2026-05-12T20:14:15;ai;level_1;;;ai;complete;131;105;0;43.746;124.760
+2026-05-12T20:15:29;ai;level_2;;;ai;timeout;300;241;0;73.918;-0.060
