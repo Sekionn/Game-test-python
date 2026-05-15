@@ -98,6 +98,8 @@ def run(mode):
     clock = pygame.time.Clock()
     agent = RandomAgent() if mode == "ai" else None
 
+    attempt_count = 0
+    attempt_count_max = 5
     running = True
     while running:
         action = ACTION_NONE
@@ -108,16 +110,17 @@ def run(mode):
 
         if mode == "human":
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_LEFT]:
-                action = ACTION_LEFT
+            if keys[pygame.K_r]:
+                action = 5
+            elif keys[pygame.K_LEFT]:
+                action = 0
             elif keys[pygame.K_RIGHT]:
-                action = ACTION_RIGHT
+                action = 1
             elif keys[pygame.K_UP]:
-                action = ACTION_UP
+                action = 3
             elif keys[pygame.K_DOWN]:
-                action = ACTION_DOWN
-            elif keys[pygame.K_r]:
-                action = ACTION_RESET
+                action = 4
+            
         else:
             action = agent.act(state)
         
@@ -126,9 +129,14 @@ def run(mode):
         if terminated or truncated:
             if terminated:
                 print(f"Completed level {level_index + 1}")
-                level_index += 1
+                attempt_count += 1
             else:
                 print(f"Level {level_index + 1} timed out")
+                attempt_count += 1
+
+            if  attempt_count >= attempt_count_max:
+                level_index += 1
+                attempt_count = 0
 
             if level_index >= len(LEVELS):
                 print("All levels completed!")
