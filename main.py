@@ -77,7 +77,7 @@ LEVELS = [
 ]
 
 MODE = "ai"
-PlayerName = "Sebastian"
+PlayerName = "magnus"
 
 def run(mode):
     level_index = 0

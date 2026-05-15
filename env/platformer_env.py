@@ -2,10 +2,8 @@ from datetime import datetime
 from pathlib import Path
 import time
 import csv
-import pandas as pd
 import gymnasium as gym
 from gymnasium import spaces
-import numpy as np
 import pygame
 from env.entities import Player, Wall, Door, Extender, ReversePlayer
 from env.entities.game_object import TILE_SIZE
@@ -37,6 +35,7 @@ class PlatformerEnv(gym.Env):
     ):
         super().__init__()
 
+        self.resets = 0
         self.max_steps = 2000
         self.level = level
         self.render_mode = "human" if render else None
@@ -52,14 +51,11 @@ class PlatformerEnv(gym.Env):
         self.player_spawn_count = self._count_tile(PLAYER)
 
         self.action_space = spaces.Discrete(5)
-        self.observation_space = spaces.Box(
-            low=np.array([0.0, 0.0, -0.6, -0.6] * self.player_spawn_count, dtype=np.float32),
-            high=np.array(
-                [float(self.width), float(self.height), 0.6, 0.6] * self.player_spawn_count,
-                dtype=np.float32,
-            ),
-            dtype=np.float32,
-        )
+        self.observation_space = spaces.MultiDiscrete([
+            self.width * 2,
+            self.height * 2,
+            5
+        ])
 
         if self.render_mode == "human":
             pygame.init()
@@ -75,7 +71,7 @@ class PlatformerEnv(gym.Env):
         super().reset(seed = seed)
 
         self.input_count = 0
-        self.resets = 0
+#        self.resets = 0
         self.has_moved = False
         self.episode_recorded = False
         self.started_at = time.perf_counter()
@@ -127,8 +123,8 @@ class PlatformerEnv(gym.Env):
         return self._get_state(), {}
     
     def softReset(self, seed=None, options=None):
-        def softReset(self):
-            self.reset()
+        self.resets += 1
+        self.reset()
 
     def step(self, action):
         reward = 0
@@ -139,7 +135,7 @@ class PlatformerEnv(gym.Env):
         if self.render_mode == "human":
             self._render()
     
-        reward = STEP_PENALTY
+        #reward = STEP_PENALTY
         self.steps += 1
 
         if action in (0, 1, 2, 3):
@@ -189,9 +185,12 @@ class PlatformerEnv(gym.Env):
             )
 
         current_distance = self._distance_to_door()
-        distance_delta = self.previous_distance_to_door - current_distance
-        reward += distance_reward
-        self.previous_distance_to_door = current_distance
+        #distance_delta = self.previous_distance_to_door - current_distance
+        #reward += distance_reward
+        #self.previous_distance_to_door = current_distance
+
+        distance_delta = prev_dist - current_distance
+        reward += distance_delta * 0.2
 
         terminated = any(player.rect().colliderect(self.door.rect()) for player in self.players)
         truncated = self.steps >= self.max_ticks
@@ -202,18 +201,18 @@ class PlatformerEnv(gym.Env):
 
         if terminated:
             elapsed_seconds = self._elapsed_seconds()
-            speed_reward = self._completion_efficiency_reward(
-                self.steps,
-                TARGET_COMPLETION_TICKS,
-                FAST_COMPLETION_REWARD,
-            )
-            input_reward = self._completion_efficiency_reward(
-                self.input_count,
-                TARGET_INPUTS,
-                INPUT_EFFICIENCY_REWARD,
-            )
-            completion_reward = COMPLETION_REWARD
-            reward += completion_reward + speed_reward + input_reward
+            #speed_reward = self._completion_efficiency_reward(
+            #    self.steps,
+                #TARGET_COMPLETION_TICKS,
+                #FAST_COMPLETION_REWARD,
+            #)
+            #input_reward = self._completion_efficiency_reward(
+            #    self.input_count,
+                #TARGET_INPUTS,
+                #INPUT_EFFICIENCY_REWARD,
+            #)
+            #completion_reward = COMPLETION_REWARD
+            #reward += completion_reward + speed_reward + input_reward
             self.done = True
             self.finished_at = time.perf_counter()
 
@@ -226,41 +225,31 @@ class PlatformerEnv(gym.Env):
                 self._record_episode(outcome, self._elapsed_seconds(), reward)
                 self.episode_recorded = True
 
-        if self.render_mode:
+        if self.render_mode == "human":
             self._render()
         
-        self.steps += 1
-
         if self.steps >= self.max_steps:
             truncated = True
 
         info = self._get_info()
         info.update(
             {
-                "distance_reward": distance_reward,
-                "completion_reward": completion_reward,
-                "speed_reward": speed_reward,
-                "input_reward": input_reward,
+                #"distance_reward": distance_reward,
+                #"completion_reward": completion_reward,
+                #"speed_reward": speed_reward,
+                #"input_reward": input_reward,
             }
         )
-
-        return self._get_obs(), reward, terminated, truncated, info
+        return self._get_state(), reward, terminated, truncated, info
 
     def _get_state(self):
         p = self.players[0]
-        dx = self.door.x - p.x
-        
-        dx_bin = round(dx, 1)
-        vx_bin = round(p.vx, 2)
 
-        return (dx_bin, vx_bin)
+        dx = int(round(self.door.x - p.x))
+        dy = int(round(self.door.y - p.y))
+        vx = int(round(p.vx))
 
-    def _get_obs(self):
-        state = []
-        for player in self.players:
-            state.extend([player.x, player.y, player.vx, player.vy])
-
-        return np.array(state, dtype=np.float32)
+        return (dx, dy, vx)
 
     def _get_info(self):
         return {
@@ -294,11 +283,11 @@ class PlatformerEnv(gym.Env):
     def _elapsed_seconds(self):
         return time.perf_counter() - self.started_at
 
-    def _completion_efficiency_reward(self, actual_value, target_value, max_reward):
-        if actual_value <= target_value:
-            return max_reward
+    #def _completion_efficiency_reward(self, actual_value, target_value, max_reward):
+    #    if actual_value <= target_value:
+    #        return max_reward
 
-        return max(0, max_reward * (target_value / actual_value))
+    #    return max(0, max_reward * (target_value / actual_value))
 
     def _record_episode(self, outcome, elapsed_seconds, final_reward):
         data = []
@@ -333,7 +322,8 @@ class PlatformerEnv(gym.Env):
             writer.writerows(data)
 
         # Print a confirmation message
-        print("CSV file '{csv_file_path}' created successfully.&quot;")
+        #print("CSV file '{csv_file_path}' created successfully.&quot;")
+        print(f"Results written to {RESULTS_FILE}")
 
 
     def _render(self):
@@ -355,4 +345,4 @@ class PlatformerEnv(gym.Env):
             self.screen.blit(timer, (12, 12))
 
         pygame.display.flip()
-        self.clock.tick(self.metadata["render_fps"])
+        #self.clock.tick(self.metadata["render_fps"])
