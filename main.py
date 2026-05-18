@@ -95,7 +95,6 @@ def run(mode):
     )
     state, info = env.reset()
 
-    clock = pygame.time.Clock()
     agent = RandomAgent() if mode == "ai" else None
 
     attempt_count = 0
@@ -152,8 +151,6 @@ def run(mode):
                 player_name=PlayerName
             )
             state, info = env.reset()
-
-        clock.tick(10)
 
     pygame.quit()
 

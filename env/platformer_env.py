@@ -89,8 +89,6 @@ class PlatformerEnv(gym.Env):
             self.clock = pygame.time.Clock()
             self.font = pygame.font.SysFont(None, 28)
 
-        self.reset()
-
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.done = False
@@ -436,13 +434,13 @@ class PlatformerEnv(gym.Env):
                 f"{final_reward:.3f}"
             ]
         )
-
+        
         with open(RESULTS_FILE, mode='a', newline='', encoding='utf-8') as file:
             # Create a csv.writer object
             writer = csv.writer(file, delimiter=";")
             # Write data to the CSV file
             writer.writerows(data)
-
+        
 
     def _render(self):
         self.screen.fill((255, 255, 255))
