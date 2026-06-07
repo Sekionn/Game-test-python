@@ -21,15 +21,15 @@ EXTENDER_Y = 6
 REVERSEPLAYER = 8
 PLAYER = 9
 
-STEP_PENALTY = -0.01
-DISTANCE_REWARD_SCALE = 0.75
+STEP_PENALTY = -0.03
+DISTANCE_REWARD_SCALE = 0.85
 MECHANISM_DISCOVERY_REWARD = 0.25
 STATE_DISCOVERY_REWARD = 0.02
-COMPLETION_REWARD = 500
+COMPLETION_REWARD = 5000
 TARGET_COMPLETION_TICKS = 56
 TARGET_INPUTS = 56
-FAST_COMPLETION_REWARD = 25
-INPUT_EFFICIENCY_REWARD = 25
+FAST_COMPLETION_REWARD = 2500
+INPUT_EFFICIENCY_REWARD = 2500
 MAX_EPISODE_TICKS = 300
 ACTION_LEFT = 0
 ACTION_RIGHT = 1
@@ -37,9 +37,10 @@ ACTION_NONE = 2
 ACTION_UP = 3
 ACTION_DOWN = 4
 ACTION_RESET = 5
-RESET_PENALTY = -20.0
-NO_PROGRESS_TICK_LIMIT = 20
-NO_PROGRESS_PENALTY = -0.05
+RESET_PENALTY = -1000.0
+RESET_REPEAT_PENALTY = -2000.0
+NO_PROGRESS_TICK_LIMIT = 15
+NO_PROGRESS_PENALTY = -100
 
 
 class PlatformerEnv(gym.Env):
@@ -82,13 +83,13 @@ class PlatformerEnv(gym.Env):
         self.action_space = spaces.Discrete(6)
         self.observation_space = spaces.Box(
             low=np.array(
-                [0.0]
+                [0.0, 0.0]
                 + [0.0, 0.0, -0.6, -0.6] * self.player_spawn_count
                 + [1.0] * self.extender_spawn_count,
                 dtype=np.float32,
             ),
             high=np.array(
-                [float("inf")]
+                [float("inf"), float("inf")]
                 + [float(self.width), float(self.height), 0.6, 0.6] * self.player_spawn_count
                 + [float(max(self.width, self.height))] * self.extender_spawn_count,
                 dtype=np.float32,
@@ -222,7 +223,8 @@ class PlatformerEnv(gym.Env):
 
         if action == ACTION_RESET:
             self.softReset(render=False)
-            reward += RESET_PENALTY
+            reset_penalty = RESET_PENALTY + (self.resets - 1) * RESET_REPEAT_PENALTY
+            reward += reset_penalty
             truncated = self.steps >= self.max_ticks
 
             if truncated:
@@ -245,7 +247,7 @@ class PlatformerEnv(gym.Env):
                     "completion_reward": 0,
                     "speed_reward": 0,
                     "input_reward": 0,
-                    "reset_penalty": RESET_PENALTY,
+                    "reset_penalty": reset_penalty,
                 }
             )
             return self._get_obs(), reward, False, truncated, info
@@ -323,7 +325,7 @@ class PlatformerEnv(gym.Env):
             self.ticks_since_progress += 1
 
         if self.ticks_since_progress >= NO_PROGRESS_TICK_LIMIT:
-            reward += NO_PROGRESS_PENALTY
+            reward += NO_PROGRESS_PENALTY * self.ticks_since_progress
 
         terminated = any(player.rect().colliderect(self.door.rect()) for player in self.players)
         truncated = self.steps >= self.max_ticks
@@ -379,7 +381,7 @@ class PlatformerEnv(gym.Env):
         return self._get_obs(), reward, terminated, truncated, info
 
     def _get_obs(self):
-        state = [self.level_number]
+        state = [self.level_number, self.resets]
         for player in self.players:
             state.extend([player.x, player.y, player.vx, player.vy])
 

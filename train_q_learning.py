@@ -2,8 +2,10 @@ from agents.q_learning_agent import QLearningAgent
 from env.platformer_env import MAX_EPISODE_TICKS, PlatformerEnv
 from main import LEVELS
 
-GENERATIONS_PER_LEVEL = 5
-ATTEMPTS_PER_GENERATION = 50
+GENERATIONS_PER_LEVEL = 15
+ATTEMPTS_PER_GENERATION = 100
+STARTING_EPSILON = 1.0
+TARGET_EPSILON = 0.05
 SUCCESS_REPLAY_PASSES = 8
 Q_TABLE_PATH = "q_table.json"
 BEST_Q_TABLE_PATH = "best_q_table.json"
@@ -19,7 +21,16 @@ def train():
     uses Gymnasium environments, but rendering is disabled so the episodes in
     a generation finish much faster than watching them one at a time.
     """
-    agent = QLearningAgent()
+    agent = QLearningAgent(
+        epsilon=STARTING_EPSILON,
+        epsilon_decay=calculate_epsilon_decay(
+            STARTING_EPSILON,
+            TARGET_EPSILON,
+            GENERATIONS_PER_LEVEL,
+            ATTEMPTS_PER_GENERATION,
+        ),
+        min_epsilon=TARGET_EPSILON,
+    )
     best_agent = None
     best_score = None
     best_details = None
@@ -27,7 +38,6 @@ def train():
     for level_index, level in enumerate(LEVELS):
         level_name = f"level_{level_index + 1}"
         agent.reset_exploration()
-        agent.reset_exploration(0.85)
         print(f"Training {level_name}")
 
         for generation in range(1, GENERATIONS_PER_LEVEL + 1):
@@ -139,6 +149,19 @@ def train():
             f"{best_details['level']} generation {best_details['generation']}, "
             f"score={best_details['score']:.2f}"
         )
+
+
+def calculate_epsilon_decay(
+    starting_epsilon,
+    target_epsilon,
+    generations,
+    attempts_per_generation,
+):
+    episodes = generations * attempts_per_generation
+    if episodes <= 0:
+        raise ValueError("Training must include at least one episode.")
+
+    return (target_epsilon / starting_epsilon) ** (1 / episodes)
 
 
 def replay_success(agent, history):
