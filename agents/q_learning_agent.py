@@ -7,7 +7,7 @@ from pathlib import Path
 class QLearningAgent:
     def __init__(
         self,
-        actions=5,
+        actions=6,
         learning_rate=0.1,
         discount=0.99,
         epsilon=1.0,

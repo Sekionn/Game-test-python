@@ -2,8 +2,8 @@ from agents.q_learning_agent import QLearningAgent
 from env.platformer_env import MAX_EPISODE_TICKS, PlatformerEnv
 from main import LEVELS
 
-GENERATIONS_PER_LEVEL = 100
-ATTEMPTS_PER_GENERATION = 200
+GENERATIONS_PER_LEVEL = 5
+ATTEMPTS_PER_GENERATION = 50
 SUCCESS_REPLAY_PASSES = 8
 Q_TABLE_PATH = "q_table.json"
 BEST_Q_TABLE_PATH = "best_q_table.json"
@@ -27,6 +27,7 @@ def train():
     for level_index, level in enumerate(LEVELS):
         level_name = f"level_{level_index + 1}"
         agent.reset_exploration()
+        agent.reset_exploration(0.85)
         print(f"Training {level_name}")
 
         for generation in range(1, GENERATIONS_PER_LEVEL + 1):

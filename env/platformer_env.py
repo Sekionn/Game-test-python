@@ -25,7 +25,7 @@ STEP_PENALTY = -0.01
 DISTANCE_REWARD_SCALE = 0.75
 MECHANISM_DISCOVERY_REWARD = 0.25
 STATE_DISCOVERY_REWARD = 0.02
-COMPLETION_REWARD = 100
+COMPLETION_REWARD = 500
 TARGET_COMPLETION_TICKS = 56
 TARGET_INPUTS = 56
 FAST_COMPLETION_REWARD = 25
@@ -37,7 +37,7 @@ ACTION_NONE = 2
 ACTION_UP = 3
 ACTION_DOWN = 4
 ACTION_RESET = 5
-RESET_PENALTY = -2.0
+RESET_PENALTY = -20.0
 NO_PROGRESS_TICK_LIMIT = 20
 NO_PROGRESS_PENALTY = -0.05
 
@@ -163,8 +163,8 @@ class PlatformerEnv(gym.Env):
             self._render()
 
         return self._get_obs(), self._get_info()
-    
-    def softReset(self, seed=None, options=None):
+
+    def softReset(self, seed=None, options=None, render=True):
         self.resets += 1
         self.walls = []
         self.players = []
@@ -211,7 +211,7 @@ class PlatformerEnv(gym.Env):
         self.discovered_mechanism_states = {self._mechanism_key()}
         self.discovered_agent_states = {self._agent_discovery_key()}
 
-        if self.render_mode == "human":
+        if render and self.render_mode == "human":
             self._render()
 
         return self._get_obs(), self._get_info()
@@ -221,7 +221,7 @@ class PlatformerEnv(gym.Env):
         self.steps += 1
 
         if action == ACTION_RESET:
-            self.softReset()
+            self.softReset(render=False)
             reward += RESET_PENALTY
             truncated = self.steps >= self.max_ticks
 
