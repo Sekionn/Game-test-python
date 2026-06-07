@@ -2,8 +2,9 @@ from agents.q_learning_agent import QLearningAgent
 from env.platformer_env import MAX_EPISODE_TICKS, PlatformerEnv
 from main import LEVELS
 
-GENERATIONS_PER_LEVEL = 5
-ATTEMPTS_PER_GENERATION = 100
+GENERATIONS_PER_LEVEL = 100
+ATTEMPTS_PER_GENERATION = 200
+SUCCESS_REPLAY_PASSES = 8
 Q_TABLE_PATH = "q_table.json"
 BEST_Q_TABLE_PATH = "best_q_table.json"
 EVALUATION_ATTEMPTS = 5
@@ -25,6 +26,7 @@ def train():
 
     for level_index, level in enumerate(LEVELS):
         level_name = f"level_{level_index + 1}"
+        agent.reset_exploration()
         print(f"Training {level_name}")
 
         for generation in range(1, GENERATIONS_PER_LEVEL + 1):
@@ -46,6 +48,7 @@ def train():
             rewards = []
             outcomes = []
             infos = []
+            histories = []
 
             for env in envs:
                 state, info = env.reset()
@@ -54,6 +57,7 @@ def train():
                 rewards.append(0)
                 outcomes.append("running")
                 infos.append(info)
+                histories.append([])
 
             while any(active):
                 for index, env in enumerate(envs):
@@ -62,21 +66,25 @@ def train():
 
                     action = agent.act(states[index], training=True)
                     next_state, reward, terminated, truncated, info = env.step(action)
+                    done = terminated or truncated
+                    histories[index].append((states[index], action, reward, next_state, done))
                     agent.learn(
                         states[index],
                         action,
                         reward,
                         next_state,
-                        terminated or truncated,
+                        done,
                     )
 
                     states[index] = next_state
                     rewards[index] += reward
                     infos[index] = info
 
-                    if terminated or truncated:
+                    if done:
                         active[index] = False
                         outcomes[index] = "complete" if terminated else "timeout"
+                        if terminated:
+                            replay_success(agent, histories[index])
                         agent.finish_episode()
 
             completed = outcomes.count("complete")
@@ -130,6 +138,12 @@ def train():
             f"{best_details['level']} generation {best_details['generation']}, "
             f"score={best_details['score']:.2f}"
         )
+
+
+def replay_success(agent, history):
+    for _ in range(SUCCESS_REPLAY_PASSES):
+        for state, action, reward, next_state, done in reversed(history):
+            agent.learn(state, action, reward, next_state, done)
 
 
 def evaluate_agent(agent, level, level_name, generation):

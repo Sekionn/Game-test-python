@@ -23,6 +23,8 @@ PLAYER = 9
 
 STEP_PENALTY = -0.01
 DISTANCE_REWARD_SCALE = 0.75
+MECHANISM_DISCOVERY_REWARD = 0.25
+STATE_DISCOVERY_REWARD = 0.02
 COMPLETION_REWARD = 100
 TARGET_COMPLETION_TICKS = 56
 TARGET_INPUTS = 56
@@ -60,6 +62,7 @@ class PlatformerEnv(gym.Env):
         self.render_mode = "human" if render else None
         self.run_label = run_label
         self.level_name = level_name
+        self.level_number = self._level_number_from_name(level_name)
         self.player_name = player_name
         self.log_results = log_results
         self.max_ticks = max_ticks
@@ -70,12 +73,24 @@ class PlatformerEnv(gym.Env):
         self.width = len(level[0])
         self.door_x, self.door_y = self._find_tile(DOOR)
         self.player_spawn_count = self._count_tile(PLAYER) + self._count_tile(REVERSEPLAYER)
+        self.extender_spawn_count = (
+            self._count_tile(EXTENDER_X_RIGHT)
+            + self._count_tile(EXTENDER_X_LEFT)
+            + self._count_tile(EXTENDER_Y)
+        )
 
         self.action_space = spaces.Discrete(6)
         self.observation_space = spaces.Box(
-            low=np.array([0.0, 0.0, -0.6, -0.6] * self.player_spawn_count, dtype=np.float32),
+            low=np.array(
+                [0.0]
+                + [0.0, 0.0, -0.6, -0.6] * self.player_spawn_count
+                + [1.0] * self.extender_spawn_count,
+                dtype=np.float32,
+            ),
             high=np.array(
-                [float(self.width), float(self.height), 0.6, 0.6] * self.player_spawn_count,
+                [float("inf")]
+                + [float(self.width), float(self.height), 0.6, 0.6] * self.player_spawn_count
+                + [float(max(self.width, self.height))] * self.extender_spawn_count,
                 dtype=np.float32,
             ),
             dtype=np.float32,
@@ -141,6 +156,8 @@ class PlatformerEnv(gym.Env):
         self.previous_distance_to_door = self._distance_to_door()
         self.best_distance_to_door = self.previous_distance_to_door
         self.ticks_since_progress = 0
+        self.discovered_mechanism_states = {self._mechanism_key()}
+        self.discovered_agent_states = {self._agent_discovery_key()}
 
         if self.render_mode == "human":
             self._render()
@@ -191,6 +208,8 @@ class PlatformerEnv(gym.Env):
         self.previous_distance_to_door = self._distance_to_door()
         self.best_distance_to_door = self.previous_distance_to_door
         self.ticks_since_progress = 0
+        self.discovered_mechanism_states = {self._mechanism_key()}
+        self.discovered_agent_states = {self._agent_discovery_key()}
 
         if self.render_mode == "human":
             self._render()
@@ -221,6 +240,8 @@ class PlatformerEnv(gym.Env):
             info.update(
                 {
                     "distance_reward": 0,
+                    "mechanism_reward": 0,
+                    "state_discovery_reward": 0,
                     "completion_reward": 0,
                     "speed_reward": 0,
                     "input_reward": 0,
@@ -267,6 +288,13 @@ class PlatformerEnv(gym.Env):
                 self.extenders
             )
 
+        mechanism_key = self._mechanism_key()
+        mechanism_reward = 0
+        if mechanism_key not in self.discovered_mechanism_states:
+            self.discovered_mechanism_states.add(mechanism_key)
+            mechanism_reward = MECHANISM_DISCOVERY_REWARD
+            reward += mechanism_reward
+
         for player in sorted(self.players, key=lambda player: player.y, reverse=True):
             player.update(
                 action,
@@ -274,6 +302,13 @@ class PlatformerEnv(gym.Env):
                 self.extenders,
                 self.players
             )
+
+        agent_state_key = self._agent_discovery_key()
+        state_discovery_reward = 0
+        if agent_state_key not in self.discovered_agent_states:
+            self.discovered_agent_states.add(agent_state_key)
+            state_discovery_reward = STATE_DISCOVERY_REWARD
+            reward += state_discovery_reward
 
         current_distance = self._distance_to_door()
         distance_delta = self.previous_distance_to_door - current_distance
@@ -330,6 +365,8 @@ class PlatformerEnv(gym.Env):
         info.update(
             {
                 "distance_reward": distance_reward,
+                "mechanism_reward": mechanism_reward,
+                "state_discovery_reward": state_discovery_reward,
                 "completion_reward": completion_reward,
                     "speed_reward": speed_reward,
                     "input_reward": input_reward,
@@ -342,9 +379,12 @@ class PlatformerEnv(gym.Env):
         return self._get_obs(), reward, terminated, truncated, info
 
     def _get_obs(self):
-        state = []
+        state = [self.level_number]
         for player in self.players:
             state.extend([player.x, player.y, player.vx, player.vy])
+
+        for extender in self.extenders:
+            state.append(extender.length)
 
         return np.array(state, dtype=np.float32)
 
@@ -377,6 +417,27 @@ class PlatformerEnv(gym.Env):
         for row in self.level:
             count += row.count(target_tile)
         return count
+
+    def _level_number_from_name(self, level_name):
+        prefix = "level_"
+        if isinstance(level_name, str) and level_name.startswith(prefix):
+            try:
+                return float(level_name[len(prefix):])
+            except ValueError:
+                pass
+
+        return 0.0
+
+    def _mechanism_key(self):
+        return tuple(extender.length for extender in self.extenders)
+
+    def _agent_discovery_key(self):
+        key = []
+        for player in self.players:
+            key.extend([round(player.x, 1), round(player.y, 1)])
+
+        key.extend(self._mechanism_key())
+        return tuple(key)
 
     def _distance_to_door(self):
         distances = [

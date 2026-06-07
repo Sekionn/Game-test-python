@@ -9,17 +9,19 @@ class QLearningAgent:
         self,
         actions=5,
         learning_rate=0.1,
-        discount=0.95,
+        discount=0.99,
         epsilon=1.0,
-        epsilon_decay=0.98,
-        min_epsilon=0.05,
-        state_precision=1,
+        epsilon_decay=0.9995,
+        min_epsilon=0.2,
+        state_precision=0,
     ):
         self.actions = actions
         self.learning_rate = learning_rate
         self.discount = discount
+        self.initial_epsilon = epsilon
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
+        self.initial_min_epsilon = min_epsilon
         self.min_epsilon = min_epsilon
         self.state_precision = state_precision
         self.q_table = {}
@@ -59,6 +61,10 @@ class QLearningAgent:
     def finish_episode(self):
         self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
 
+    def reset_exploration(self, epsilon=None):
+        self.epsilon = self.initial_epsilon if epsilon is None else epsilon
+        self.min_epsilon = self.initial_min_epsilon
+
     def clone(self):
         agent = QLearningAgent(
             actions=self.actions,
@@ -77,8 +83,10 @@ class QLearningAgent:
             "actions": self.actions,
             "learning_rate": self.learning_rate,
             "discount": self.discount,
+            "initial_epsilon": self.initial_epsilon,
             "epsilon": self.epsilon,
             "epsilon_decay": self.epsilon_decay,
+            "initial_min_epsilon": self.initial_min_epsilon,
             "min_epsilon": self.min_epsilon,
             "state_precision": self.state_precision,
             "q_table": self.q_table,
@@ -97,6 +105,8 @@ class QLearningAgent:
             min_epsilon=data["min_epsilon"],
             state_precision=data["state_precision"],
         )
+        agent.initial_epsilon = data.get("initial_epsilon", data.get("epsilon", 1.0))
+        agent.initial_min_epsilon = data.get("initial_min_epsilon", data["min_epsilon"])
         agent.q_table = data["q_table"]
         return agent
 
