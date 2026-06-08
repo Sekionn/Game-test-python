@@ -25,11 +25,11 @@ STEP_PENALTY = -0.03
 DISTANCE_REWARD_SCALE = 0.85
 Y_EXTENDER_LIFT_DISCOVERY_REWARD = 0.25
 STATE_DISCOVERY_REWARD = 0.02
-COMPLETION_REWARD = 5000
-TARGET_COMPLETION_TICKS = 56
-TARGET_INPUTS = 56
-FAST_COMPLETION_REWARD = 2500
-INPUT_EFFICIENCY_REWARD = 2500
+COMPLETION_REWARD = 1000
+TARGET_COMPLETION_TICKS = 30
+TARGET_INPUTS = 30
+FAST_COMPLETION_REWARD = 300
+INPUT_EFFICIENCY_REWARD = 300
 MAX_EPISODE_TICKS = 300
 ACTION_LEFT = 0
 ACTION_RIGHT = 1
@@ -37,10 +37,17 @@ ACTION_NONE = 2
 ACTION_UP = 3
 ACTION_DOWN = 4
 ACTION_RESET = 5
-RESET_PENALTY = -10000.0
-RESET_REPEAT_PENALTY = -20000.0
+RESET_PENALTY = -50.0
+RESET_REPEAT_PENALTY = -100.0
 NO_PROGRESS_TICK_LIMIT = 15
-NO_PROGRESS_PENALTY = -100
+NO_PROGRESS_PENALTY = -1
+SURFACE_NONE = 0
+SURFACE_FLOOR = 1
+SURFACE_DOOR = 2
+SURFACE_EXTENDER = 3
+SURFACE_AXIS_NONE = 0
+SURFACE_AXIS_X = 1
+SURFACE_AXIS_Y = 2
 
 
 class PlatformerEnv(gym.Env):
@@ -84,13 +91,22 @@ class PlatformerEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=np.array(
                 [0.0, 0.0]
-                + [0.0, 0.0, -0.6, -0.6] * self.player_spawn_count
+                + [0.0, 0.0, -0.6, -0.6, SURFACE_NONE, SURFACE_AXIS_NONE]
+                * self.player_spawn_count
                 + [1.0] * self.extender_spawn_count,
                 dtype=np.float32,
             ),
             high=np.array(
                 [float("inf"), float("inf")]
-                + [float(self.width), float(self.height), 0.6, 0.6] * self.player_spawn_count
+                + [
+                    float(self.width),
+                    float(self.height),
+                    0.6,
+                    0.6,
+                    SURFACE_EXTENDER,
+                    SURFACE_AXIS_Y,
+                ]
+                * self.player_spawn_count
                 + [float(max(self.width, self.height))] * self.extender_spawn_count,
                 dtype=np.float32,
             ),
@@ -342,7 +358,7 @@ class PlatformerEnv(gym.Env):
             self.ticks_since_progress += 1
 
         if self.ticks_since_progress >= NO_PROGRESS_TICK_LIMIT:
-            reward += NO_PROGRESS_PENALTY * self.ticks_since_progress
+            reward += NO_PROGRESS_PENALTY
 
         terminated = any(player.rect().colliderect(self.door.rect()) for player in self.players)
         truncated = self.steps >= self.max_ticks
@@ -400,12 +416,40 @@ class PlatformerEnv(gym.Env):
     def _get_obs(self):
         state = [self.level_number, self.resets]
         for player in self.players:
-            state.extend([player.x, player.y, player.vx, player.vy])
+            surface_class, surface_axis = self._surface_beneath(player)
+            state.extend(
+                [player.x, player.y, player.vx, player.vy, surface_class, surface_axis]
+            )
 
         for extender in self.extenders:
             state.append(extender.length)
 
         return np.array(state, dtype=np.float32)
+
+    def _surface_beneath(self, player):
+        player_rect = player.rect()
+
+        if self.door is not None and player_rect.colliderect(self.door.rect()):
+            return SURFACE_DOOR, SURFACE_AXIS_NONE
+
+        foot_probe = pygame.Rect(
+            player_rect.left,
+            player_rect.bottom,
+            TILE_SIZE,
+            3,
+        )
+
+        for extender in self.extenders:
+            for rect in extender.get_rects():
+                if foot_probe.colliderect(rect):
+                    axis = SURFACE_AXIS_X if extender.axis == "x" else SURFACE_AXIS_Y
+                    return SURFACE_EXTENDER, axis
+
+        for wall in self.walls:
+            if foot_probe.colliderect(wall.rect()):
+                return SURFACE_FLOOR, SURFACE_AXIS_NONE
+
+        return SURFACE_NONE, SURFACE_AXIS_NONE
 
     def _get_info(self):
         return {

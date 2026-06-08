@@ -6,7 +6,7 @@ GENERATIONS_PER_LEVEL = 100
 ATTEMPTS_PER_GENERATION = 300
 STARTING_EPSILON = 1.0
 TARGET_EPSILON = 0.05
-SUCCESS_REPLAY_PASSES = 8
+SUCCESS_REPLAY_PASSES = 12
 Q_TABLE_PATH = "q_table.json"
 BEST_Q_TABLE_PATH = "best_q_table.json"
 EVALUATION_ATTEMPTS = 5
@@ -168,7 +168,7 @@ def train():
                 )
                 break
         
-        agent.reset_exploration(epsilon=0.85)
+        agent.reset_exploration(epsilon=0.6)
         agent.reset_decay(decay=calculate_epsilon_decay(
             0.6,
             TARGET_EPSILON,
