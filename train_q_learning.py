@@ -104,6 +104,7 @@ def train():
             average_ticks = sum(info["ticks"] for info in infos) / len(infos)
             average_inputs = sum(info["inputs"] for info in infos) / len(infos)
             average_reward = sum(rewards) / len(rewards)
+            training_candidate = summarize_training_candidate(outcomes, infos, rewards)
 
             print(
                 f"{level_name} generation {generation:02d}: "
@@ -122,9 +123,20 @@ def train():
                 f"{level_name} generation {generation:02d} evaluation: "
                 f"{evaluation['completed']}/{EVALUATION_ATTEMPTS} complete, "
                 f"avg ticks={evaluation['average_ticks']:.1f}, "
+                f"avg inputs={evaluation['average_inputs']:.1f}, "
                 f"avg reward={evaluation['average_reward']:.2f}, "
                 f"score={evaluation['score']:.2f}"
             )
+            if training_candidate is not None:
+                print(
+                    f"{level_name} generation {generation:02d} best training attempts: "
+                    f"{training_candidate['completed']}/{EVALUATION_ATTEMPTS} complete, "
+                    f"avg ticks={training_candidate['average_ticks']:.1f}, "
+                    f"avg inputs={training_candidate['average_inputs']:.1f}, "
+                    f"avg reward={training_candidate['average_reward']:.2f}, "
+                    f"score={training_candidate['score']:.2f}"
+                )
+
             perfect_generation = completed == ATTEMPTS_PER_GENERATION
             perfect_evaluation = evaluation["completed"] == EVALUATION_ATTEMPTS
 
@@ -139,22 +151,19 @@ def train():
                 f"{PERFECT_EVALUATION_STREAK_TO_ADVANCE}"
             )
 
-            if best_score is None or evaluation["score"] > best_score:
-                best_score = evaluation["score"]
-                best_agent = agent.clone()
-                best_details = {
-                    "level": level_name,
-                    "generation": generation,
-                    **evaluation,
-                }
-                best_agent.save(BEST_Q_TABLE_PATH)
-                print(
-                    f"New best Q-table saved from {level_name} "
-                    f"generation {generation:02d}"
-                )
+            best_score, best_agent, best_details = update_best_agent(
+                agent,
+                best_score,
+                best_agent,
+                best_details,
+                level_name,
+                generation,
+                "training",
+                training_candidate,
+            )
 
             if SHOW_PREVIEW_AFTER_GENERATION:
-                preview_training_progress(agent, level, level_name, generation)
+                preview_training_progress(agent if best_agent is None else best_agent, level, level_name, generation)
 
             if perfect_evaluation_streak >= PERFECT_EVALUATION_STREAK_TO_ADVANCE:
                 print(
@@ -182,6 +191,7 @@ def train():
         print(
             f"Best Q-table saved to {BEST_Q_TABLE_PATH}: "
             f"{best_details['level']} generation {best_details['generation']}, "
+            f"source={best_details['source']}, "
             f"score={best_details['score']:.2f}"
         )
 
@@ -205,9 +215,83 @@ def replay_success(agent, history):
             agent.learn(state, action, reward, next_state, done)
 
 
+def summarize_training_candidate(outcomes, infos, rewards):
+    completed_attempts = [
+        (infos[index], rewards[index])
+        for index, outcome in enumerate(outcomes)
+        if outcome == "complete"
+    ]
+
+    if not completed_attempts:
+        return None
+
+    completed_attempts.sort(
+        key=lambda attempt: (
+            attempt[0]["ticks"],
+            attempt[0]["inputs"],
+            -attempt[1],
+        )
+    )
+    best_attempts = completed_attempts[:EVALUATION_ATTEMPTS]
+    completed = len(best_attempts)
+    average_ticks = sum(info["ticks"] for info, _ in best_attempts) / completed
+    average_inputs = sum(info["inputs"] for info, _ in best_attempts) / completed
+    average_reward = sum(reward for _, reward in best_attempts) / completed
+
+    return {
+        "completed": completed,
+        "average_ticks": average_ticks,
+        "average_inputs": average_inputs,
+        "average_reward": average_reward,
+        "score": score_attempt_group(
+            completed,
+            average_ticks,
+            average_inputs,
+            average_reward,
+        ),
+    }
+
+
+def score_attempt_group(completed, average_ticks, average_inputs, average_reward):
+    return completed * 100000 - average_ticks - average_inputs + average_reward
+
+
+def update_best_agent(
+    agent,
+    best_score,
+    best_agent,
+    best_details,
+    level_name,
+    generation,
+    source,
+    candidate,
+):
+    if candidate is None:
+        return best_score, best_agent, best_details
+
+    if best_score is not None and candidate["score"] <= best_score:
+        return best_score, best_agent, best_details
+
+    best_score = candidate["score"]
+    best_agent = agent.clone()
+    best_details = {
+        "level": level_name,
+        "generation": generation,
+        "source": source,
+        **candidate,
+    }
+    best_agent.save(BEST_Q_TABLE_PATH)
+    print(
+        f"New best Q-table saved from {level_name} "
+        f"generation {generation:02d} ({source})"
+    )
+    return best_score, best_agent, best_details
+
+
 def evaluate_agent(agent, level, level_name, generation):
     completed = 0
     total_ticks = 0
+    total_inputs = 0
     total_reward = 0
 
     for attempt in range(1, EVALUATION_ATTEMPTS + 1):
@@ -235,16 +319,24 @@ def evaluate_agent(agent, level, level_name, generation):
             completed += 1
 
         total_ticks += info["ticks"]
+        total_inputs += info["inputs"]
         total_reward += attempt_reward
         env.close()
 
     average_ticks = total_ticks / EVALUATION_ATTEMPTS
+    average_inputs = total_inputs / EVALUATION_ATTEMPTS
     average_reward = total_reward / EVALUATION_ATTEMPTS
-    score = completed * 10000 - average_ticks + average_reward
+    score = score_attempt_group(
+        completed,
+        average_ticks,
+        average_inputs,
+        average_reward,
+    )
 
     return {
         "completed": completed,
         "average_ticks": average_ticks,
+        "average_inputs": average_inputs,
         "average_reward": average_reward,
         "score": score,
     }
