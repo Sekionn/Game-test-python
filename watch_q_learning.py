@@ -5,7 +5,7 @@ from env.platformer_env import MAX_EPISODE_TICKS, PlatformerEnv
 from main import LEVELS
 
 Q_TABLE_PATH = "best_q_table.json"
-WATCH_EPISODES_PER_LEVEL = 3
+WATCH_EPISODES_PER_LEVEL = 5
 MAX_WATCH_TICKS = MAX_EPISODE_TICKS
 USE_EXPLORATION_WHILE_WATCHING = False
 
