@@ -13,7 +13,7 @@ class QLearningAgent:
         epsilon=1.0,
         epsilon_decay=0.9995,
         min_epsilon=0.2,
-        state_precision=2,
+        state_precision=1,
     ):
         self.actions = actions
         self.learning_rate = learning_rate

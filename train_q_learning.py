@@ -38,7 +38,6 @@ def train():
 
     for level_index, level in enumerate(LEVELS):
         level_name = f"level_{level_index + 1}"
-        agent.reset_exploration()
         print(f"Training {level_name}")
         perfect_evaluation_streak = 0
 
