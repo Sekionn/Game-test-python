@@ -10,7 +10,6 @@ from env.platformer_env import (
     ACTION_UP,
     PlatformerEnv,
 )
-from agents.random_agent import RandomAgent
 
 LEVELS = [
     # Level 1
@@ -95,8 +94,6 @@ def run(mode):
     )
     state, info = env.reset()
 
-    agent = RandomAgent() if mode == "ai" else None
-
     attempt_count = 0
     attempt_count_max = 5
     running = True
@@ -119,9 +116,6 @@ def run(mode):
                 action = 3
             elif keys[pygame.K_DOWN]:
                 action = 4
-            
-        else:
-            action = agent.act(state)
         
         state, reward, terminated, truncated, info = env.step(action)
 
