@@ -2,14 +2,15 @@ from agents.q_learning_agent import QLearningAgent
 from env.platformer_env import MAX_EPISODE_TICKS, PlatformerEnv
 from main import LEVELS
 
-GENERATIONS_PER_LEVEL = 15
-ATTEMPTS_PER_GENERATION = 100
+GENERATIONS_PER_LEVEL = 100
+ATTEMPTS_PER_GENERATION = 300
 STARTING_EPSILON = 1.0
 TARGET_EPSILON = 0.05
 SUCCESS_REPLAY_PASSES = 8
 Q_TABLE_PATH = "q_table.json"
 BEST_Q_TABLE_PATH = "best_q_table.json"
 EVALUATION_ATTEMPTS = 5
+PERFECT_EVALUATION_STREAK_TO_ADVANCE = 5
 SHOW_PREVIEW_AFTER_GENERATION = True
 PREVIEW_MAX_TICKS = MAX_EPISODE_TICKS
 
@@ -39,6 +40,7 @@ def train():
         level_name = f"level_{level_index + 1}"
         agent.reset_exploration()
         print(f"Training {level_name}")
+        perfect_evaluation_streak = 0
 
         for generation in range(1, GENERATIONS_PER_LEVEL + 1):
             envs = [
@@ -123,6 +125,19 @@ def train():
                 f"avg reward={evaluation['average_reward']:.2f}, "
                 f"score={evaluation['score']:.2f}"
             )
+            perfect_generation = completed == ATTEMPTS_PER_GENERATION
+            perfect_evaluation = evaluation["completed"] == EVALUATION_ATTEMPTS
+
+            if perfect_generation and perfect_evaluation:
+                perfect_evaluation_streak += 1
+            else:
+                perfect_evaluation_streak = 0
+
+            print(
+                f"{level_name} perfect streak: "
+                f"{perfect_evaluation_streak}/"
+                f"{PERFECT_EVALUATION_STREAK_TO_ADVANCE}"
+            )
 
             if best_score is None or evaluation["score"] > best_score:
                 best_score = evaluation["score"]
@@ -141,6 +156,26 @@ def train():
             if SHOW_PREVIEW_AFTER_GENERATION:
                 preview_training_progress(agent, level, level_name, generation)
 
+            if perfect_evaluation_streak >= PERFECT_EVALUATION_STREAK_TO_ADVANCE:
+                print(
+                    f"{level_name} reached "
+                    f"{ATTEMPTS_PER_GENERATION}/{ATTEMPTS_PER_GENERATION} "
+                    f"training completions and "
+                    f"{EVALUATION_ATTEMPTS}/{EVALUATION_ATTEMPTS} evaluation "
+                    f"completions for "
+                    f"{PERFECT_EVALUATION_STREAK_TO_ADVANCE} generations in a row; "
+                    "moving to the next level"
+                )
+                break
+        
+        agent.reset_exploration(epsilon=0.85)
+        agent.reset_decay(decay=calculate_epsilon_decay(
+            0.6,
+            TARGET_EPSILON,
+            GENERATIONS_PER_LEVEL,
+            ATTEMPTS_PER_GENERATION,
+        ))
+        
     agent.save(Q_TABLE_PATH)
     print(f"Saved learned Q-table to {Q_TABLE_PATH}")
     if best_agent is not None:

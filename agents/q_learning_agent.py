@@ -13,13 +13,14 @@ class QLearningAgent:
         epsilon=1.0,
         epsilon_decay=0.9995,
         min_epsilon=0.2,
-        state_precision=0,
+        state_precision=2,
     ):
         self.actions = actions
         self.learning_rate = learning_rate
         self.discount = discount
         self.initial_epsilon = epsilon
         self.epsilon = epsilon
+        self.initial_epsilon_decay = epsilon_decay
         self.epsilon_decay = epsilon_decay
         self.initial_min_epsilon = min_epsilon
         self.min_epsilon = min_epsilon
@@ -64,7 +65,11 @@ class QLearningAgent:
     def reset_exploration(self, epsilon=None):
         self.epsilon = self.initial_epsilon if epsilon is None else epsilon
         self.min_epsilon = self.initial_min_epsilon
-
+    
+    def reset_decay(self, decay=None):
+        self.epsilon_decay = self.epsilon_decay if decay is None else decay
+        self.min_epsilon = self.initial_min_epsilon
+        
     def clone(self):
         agent = QLearningAgent(
             actions=self.actions,

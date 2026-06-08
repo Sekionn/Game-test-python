@@ -23,7 +23,7 @@ PLAYER = 9
 
 STEP_PENALTY = -0.03
 DISTANCE_REWARD_SCALE = 0.85
-MECHANISM_DISCOVERY_REWARD = 0.25
+Y_EXTENDER_LIFT_DISCOVERY_REWARD = 0.25
 STATE_DISCOVERY_REWARD = 0.02
 COMPLETION_REWARD = 5000
 TARGET_COMPLETION_TICKS = 56
@@ -37,8 +37,8 @@ ACTION_NONE = 2
 ACTION_UP = 3
 ACTION_DOWN = 4
 ACTION_RESET = 5
-RESET_PENALTY = -1000.0
-RESET_REPEAT_PENALTY = -2000.0
+RESET_PENALTY = -10000.0
+RESET_REPEAT_PENALTY = -20000.0
 NO_PROGRESS_TICK_LIMIT = 15
 NO_PROGRESS_PENALTY = -100
 
@@ -157,7 +157,7 @@ class PlatformerEnv(gym.Env):
         self.previous_distance_to_door = self._distance_to_door()
         self.best_distance_to_door = self.previous_distance_to_door
         self.ticks_since_progress = 0
-        self.discovered_mechanism_states = {self._mechanism_key()}
+        self.discovered_y_extender_lift = False
         self.discovered_agent_states = {self._agent_discovery_key()}
 
         if self.render_mode == "human":
@@ -209,7 +209,7 @@ class PlatformerEnv(gym.Env):
         self.previous_distance_to_door = self._distance_to_door()
         self.best_distance_to_door = self.previous_distance_to_door
         self.ticks_since_progress = 0
-        self.discovered_mechanism_states = {self._mechanism_key()}
+        self.discovered_y_extender_lift = False
         self.discovered_agent_states = {self._agent_discovery_key()}
 
         if render and self.render_mode == "human":
@@ -275,6 +275,11 @@ class PlatformerEnv(gym.Env):
             elif action == ACTION_DOWN:
                 group_action["y"] = -1
 
+        previous_player_y_positions = [player.y for player in self.players]
+        previous_y_extender_lengths = [
+            extender.length for extender in self.extenders if extender.axis == "y"
+        ]
+
         extenders_by_action = sorted(
             self.extenders,
             key=lambda extender: extender.action_for_group_action(group_action)
@@ -290,11 +295,23 @@ class PlatformerEnv(gym.Env):
                 self.extenders
             )
 
-        mechanism_key = self._mechanism_key()
         mechanism_reward = 0
-        if mechanism_key not in self.discovered_mechanism_states:
-            self.discovered_mechanism_states.add(mechanism_key)
-            mechanism_reward = MECHANISM_DISCOVERY_REWARD
+        y_extender_lengths = [
+            extender.length for extender in self.extenders if extender.axis == "y"
+        ]
+        y_extender_changed = y_extender_lengths != previous_y_extender_lengths
+        player_lifted_by_y_extender = any(
+            player.y < previous_y
+            for player, previous_y in zip(self.players, previous_player_y_positions)
+        )
+
+        if (
+            not self.discovered_y_extender_lift
+            and y_extender_changed
+            and player_lifted_by_y_extender
+        ):
+            self.discovered_y_extender_lift = True
+            mechanism_reward = Y_EXTENDER_LIFT_DISCOVERY_REWARD
             reward += mechanism_reward
 
         for player in sorted(self.players, key=lambda player: player.y, reverse=True):
