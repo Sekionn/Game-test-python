@@ -8,7 +8,7 @@ STARTING_EPSILON = 1.0
 TARGET_EPSILON = 0.05
 SUCCESS_REPLAY_PASSES = 12
 Q_TABLE_PATH = "q_table.json"
-BEST_Q_TABLE_PATH = "best_q_table.json"
+BEST_Q_TABLE_TEMPLATE = "best_q_table_{level_name}.json"
 EVALUATION_ATTEMPTS = 5
 PERFECT_EVALUATION_STREAK_TO_ADVANCE = 5
 SHOW_PREVIEW_AFTER_GENERATION = True
@@ -32,12 +32,14 @@ def train():
         ),
         min_epsilon=TARGET_EPSILON,
     )
-    best_agent = None
-    best_score = None
-    best_details = None
+    all_best_details = []
 
     for level_index, level in enumerate(LEVELS):
         level_name = f"level_{level_index + 1}"
+        best_agent = None
+        best_score = None
+        best_details = None
+        best_q_table_path = best_q_table_path_for(level_name)
         print(f"Training {level_name}")
         perfect_evaluation_streak = 0
 
@@ -159,6 +161,7 @@ def train():
                 generation,
                 "training",
                 training_candidate,
+                best_q_table_path,
             )
 
             if SHOW_PREVIEW_AFTER_GENERATION:
@@ -175,6 +178,9 @@ def train():
                     "moving to the next level"
                 )
                 break
+
+        if best_details is not None:
+            all_best_details.append(best_details)
         
         agent.reset_exploration(epsilon=0.6)
         agent.reset_decay(decay=calculate_epsilon_decay(
@@ -186,12 +192,12 @@ def train():
         
     agent.save(Q_TABLE_PATH)
     print(f"Saved learned Q-table to {Q_TABLE_PATH}")
-    if best_agent is not None:
+    for details in all_best_details:
         print(
-            f"Best Q-table saved to {BEST_Q_TABLE_PATH}: "
-            f"{best_details['level']} generation {best_details['generation']}, "
-            f"source={best_details['source']}, "
-            f"score={best_details['score']:.2f}"
+            f"Best Q-table saved to {details['path']}: "
+            f"{details['level']} generation {details['generation']}, "
+            f"source={details['source']}, "
+            f"score={details['score']:.2f}"
         )
 
 
@@ -212,6 +218,22 @@ def replay_success(agent, history):
     for _ in range(SUCCESS_REPLAY_PASSES):
         for state, action, reward, next_state, done in reversed(history):
             agent.learn(state, action, reward, next_state, done)
+
+
+def best_q_table_path_for(level_name):
+    return BEST_Q_TABLE_TEMPLATE.format(level_name=level_name)
+
+
+def clone_for_level(agent, level_name):
+    level_number = float(level_name.removeprefix("level_"))
+    level_prefix = f"{level_number}|"
+    level_agent = agent.clone()
+    level_agent.q_table = {
+        state: values
+        for state, values in agent.q_table.items()
+        if state.startswith(level_prefix)
+    }
+    return level_agent
 
 
 def summarize_training_candidate(outcomes, infos, rewards):
@@ -264,6 +286,7 @@ def update_best_agent(
     generation,
     source,
     candidate,
+    path,
 ):
     if candidate is None:
         return best_score, best_agent, best_details
@@ -272,17 +295,18 @@ def update_best_agent(
         return best_score, best_agent, best_details
 
     best_score = candidate["score"]
-    best_agent = agent.clone()
+    best_agent = clone_for_level(agent, level_name)
     best_details = {
         "level": level_name,
         "generation": generation,
         "source": source,
+        "path": path,
         **candidate,
     }
-    best_agent.save(BEST_Q_TABLE_PATH)
+    best_agent.save(path)
     print(
         f"New best Q-table saved from {level_name} "
-        f"generation {generation:02d} ({source})"
+        f"generation {generation:02d} ({source}) to {path}"
     )
     return best_score, best_agent, best_details
 

@@ -6,8 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="ceae7976-5da2-4d53-9c01-1f812ab59a91" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/best_q_table.json" beforeDir="false" afterPath="$PROJECT_DIR$/best_q_table.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/game_results.csv" beforeDir="false" afterPath="$PROJECT_DIR$/game_results.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/q_table.json" beforeDir="false" afterPath="$PROJECT_DIR$/q_table.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/train_q_learning.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_q_learning.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -222,6 +222,7 @@
       <workItem from="1780229793642" duration="66000" />
       <workItem from="1780657912905" duration="6000" />
       <workItem from="1780658027982" duration="465000" />
+      <workItem from="1780995030367" duration="192000" />
     </task>
     <servers />
   </component>
